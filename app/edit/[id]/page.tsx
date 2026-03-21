@@ -29,9 +29,11 @@ export default function EditRecipePage() {
   const [notes, setNotes] = useState('')
   const [tags, setTags] = useState('')
   const [imageUrl, setImageUrl] = useState('')
-  const [ingredients, setIngredients] = useState([
-    { name: '', amount: '', unit: '' }
-  ])
+  const [ingredients, setIngredients] = useState<{
+    ingredient_id: string;
+    amount: string;
+    unit: string
+  }[]>([])
   const [message, setMessage] = useState('')
   const [uploading, setUploading] = useState(false)
   const [authorized, setAuthorized] = useState(false)
@@ -43,23 +45,27 @@ export default function EditRecipePage() {
     }
   }, [id])
 
-  function updateIngredient(index, field, value) {
+  function updateIngredient(
+    index: number,
+    field: 'ingredient_id' | 'amount' | 'unit',
+    value: string
+  ) {
     const updatedIngredients = [...ingredients]
     updatedIngredients[index][field] = value
     setIngredients(updatedIngredients)
   }
 
   function addIngredientRow() {
-    setIngredients([...ingredients, { name: '', amount: '', unit: '' }])
+    setIngredients([...ingredients, { ingredient_id: '', amount: '', unit: '' }])
   }
 
-  function removeIngredientRow(index) {
+  function removeIngredientRow(index: number) {
     const updatedIngredients = ingredients.filter((_, i) => i !== index)
     setIngredients(updatedIngredients)
   }
 
-  function resizeImage(file, maxWidth = 1200, quality = 0.8) {
-    return new Promise((resolve, reject) => {
+  function resizeImage(file: File, maxWidth = 1200, quality = 0.8): Promise<Blob> {
+    return new Promise<Blob>((resolve, reject) => {
       const img = new Image()
       const reader = new FileReader()
 
@@ -115,7 +121,7 @@ export default function EditRecipePage() {
     })
   }
 
-  async function uploadImage(file) {
+  async function uploadImage(file: File | null) {
     if (!file) return
 
     setUploading(true)
@@ -224,7 +230,7 @@ export default function EditRecipePage() {
     }
 
     if (!recipeIngredientsData || recipeIngredientsData.length === 0) {
-      setIngredients([{ name: '', amount: '', unit: '' }])
+      setIngredients([{ ingredient_id: '', amount: '', unit: '' }])
       setMessage('')
       setCheckingAccess(false)
       return
@@ -249,7 +255,7 @@ export default function EditRecipePage() {
       )
 
       return {
-        name: matchingIngredient ? matchingIngredient.Name : '',
+        ingredient_id: matchingIngredient ? matchingIngredient.Name : '',
         amount: item.Amount || '',
         unit: item.Unit || ''
       }
@@ -258,7 +264,7 @@ export default function EditRecipePage() {
     setIngredients(
       mergedIngredients.length > 0
         ? mergedIngredients
-        : [{ name: '', amount: '', unit: '' }]
+        : [{ ingredient_id: '', amount: '', unit: '' }]
     )
 
     setMessage('')
@@ -274,7 +280,7 @@ export default function EditRecipePage() {
     }
 
     const cleanedIngredients = ingredients.filter(
-      (ingredient) => ingredient.name.trim() !== ''
+      (ingredient) => ingredient.ingredient_id.trim() !== ''
     )
 
     if (!name.trim()) {
@@ -332,7 +338,7 @@ export default function EditRecipePage() {
     }
 
     for (const ingredient of cleanedIngredients) {
-      const ingredientName = ingredient.name.trim()
+      const ingredientName = ingredient.ingredient_id.trim()
 
       const { data: existingIngredient, error: existingIngredientError } = await supabase
         .from('Ingredients')
@@ -482,7 +488,7 @@ export default function EditRecipePage() {
         <input
           type="file"
           accept="image/*"
-          onChange={(e) => uploadImage(e.target.files?.[0])}
+          onChange={(e) => uploadImage(e.target.files?.[0] ?? null)}
           style={{ marginBottom: 10 }}
         />
 
@@ -555,8 +561,8 @@ export default function EditRecipePage() {
         >
           <input
             placeholder="Ingredient name"
-            value={ingredient.name}
-            onChange={(e) => updateIngredient(index, 'name', e.target.value)}
+            value={ingredient.ingredient_id}
+            onChange={(e) => updateIngredient(index, 'ingredient_id', e.target.value)}
             style={{ padding: 10, width: '100%' }}
           />
 

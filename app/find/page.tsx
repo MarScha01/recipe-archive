@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase'
 
 export default function FindPage() {
   const [input, setInput] = useState('')
-  const [results, setResults] = useState([])
+  const [results, setResults] = useState<any[]>([])
   const [message, setMessage] = useState('')
 
   async function findRecipes() {
@@ -77,7 +77,7 @@ export default function FindPage() {
       return
     }
 
-    const recipeMatches = {}
+    const recipeMatches: Record<number, number> = {}
 
     recipeIngredientData.forEach((row) => {
       if (ingredientIds.includes(row.Ingredient_id)) {

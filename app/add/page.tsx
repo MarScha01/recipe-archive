@@ -25,10 +25,10 @@ export default function AddRecipePage() {
   const [notes, setNotes] = useState('')
   const [tags, setTags] = useState('')
   const [imageUrl, setImageUrl] = useState('')
-  const [ingredients, setIngredients] = useState([
-    { name: '', amount: '', unit: '' }
-  ])
-  const [allIngredients, setAllIngredients] = useState([])
+  const [ingredients, setIngredients] = useState<
+    { ingredient_id: string; amount: string; unit: string }[]
+    >([{ ingredient_id: '', amount: '', unit: '' }])
+  const [allIngredients, setAllIngredients] = useState<{ id: number; Name: string }[]>([])
   const [message, setMessage] = useState('')
   const [uploading, setUploading] = useState(false)
 
@@ -50,17 +50,21 @@ export default function AddRecipePage() {
     setAllIngredients(data || [])
   }
 
-  function updateIngredient(index, field, value) {
+  function updateIngredient(
+    index: number,
+    field: 'ingredient_id' | 'amount' | 'unit',
+    value: string
+  ) {
     const updatedIngredients = [...ingredients]
     updatedIngredients[index][field] = value
-    setIngredients(updatedIngredients)
+      setIngredients(updatedIngredients)
   }
 
   function addIngredientRow() {
-    setIngredients([...ingredients, { name: '', amount: '', unit: '' }])
+    setIngredients([...ingredients, { ingredient_id: '', amount: '', unit: '' }])
   }
 
-  function removeIngredientRow(index) {
+  function removeIngredientRow(index: number) {
     const updatedIngredients = ingredients.filter((_, i) => i !== index)
     setIngredients(updatedIngredients)
   }
@@ -75,9 +79,9 @@ export default function AddRecipePage() {
       .slice(0, 5)
   }
 
-  function selectSuggestion(index: number, selectedName: string) {
+  function selectSuggestion(index: number, selectedId: string) {
     const updatedIngredients = [...ingredients]
-    updatedIngredients[index].name = selectedName
+    updatedIngredients[index].ingredient_id = selectedId
     setIngredients(updatedIngredients)
   }
 
@@ -186,7 +190,7 @@ export default function AddRecipePage() {
     }
 
     const cleanedIngredients = ingredients.filter(
-      (ingredient) => ingredient.name.trim() !== ''
+      (ingredient) => ingredient.ingredient_id.trim() !== ''
     )
 
     if (!name.trim()) {
@@ -246,56 +250,23 @@ export default function AddRecipePage() {
     const recipeId = recipeData.id
 
     for (const ingredient of cleanedIngredients) {
-      const ingredientName = ingredient.name.trim()
-
-      const { data: existingIngredient, error: existingIngredientError } = await supabase
-        .from('Ingredients')
-        .select('id, Name')
-        .ilike('Name', ingredientName)
-        .limit(1)
-        .maybeSingle()
-
-      if (existingIngredientError) {
-        setMessage(`Ingredient lookup error: ${existingIngredientError.message}`)
-        return
-      }
-
-      let ingredientId: number
-
-      if (existingIngredient) {
-        ingredientId = existingIngredient.id
-      } else {
-        const formattedIngredientName =
-          ingredientName.charAt(0).toUpperCase() + ingredientName.slice(1)
-
-        const { data: newIngredient, error: newIngredientError } = await supabase
-          .from('Ingredients')
-          .insert([{ Name: formattedIngredientName }])
-          .select()
-          .single()
-
-        if (newIngredientError) {
-          setMessage(`Ingredient insert error: ${newIngredientError.message}`)
-          return
+      const ingredientId = Number(ingredient.ingredient_id)
+        if (!ingredientId) {
+          setMessage('Please select a valid ingredient.')
+            return
         }
 
-        ingredientId = newIngredient.id
-      }
-
-      const { error: linkError } = await supabase
-        .from('Recipe_ingredients')
-        .insert([
-          {
+        const { error: recipeIngredientError } = await supabase
+          .from('Recipe_ingredients')
+          .insert({
             Recipe_id: recipeId,
             Ingredient_id: ingredientId,
             Amount: ingredient.amount || null,
             Unit: ingredient.unit || null
-          }
-        ])
-
-      if (linkError) {
-        setMessage(`Recipe ingredient link error: ${linkError.message}`)
-        return
+          })
+        if (recipeIngredientError) {
+          setMessage('Recipe ingredient error: $ {recipeIngredientError.message}')
+            return
       }
     }
 
@@ -403,12 +374,12 @@ export default function AddRecipePage() {
       <h2>Ingredients</h2>
 
       {ingredients.map((ingredient, index) => {
-        const suggestions = getSuggestions(ingredient.name)
+        const suggestions = getSuggestions(ingredient.ingredient_id)
         const showSuggestions =
-          ingredient.name.trim() !== '' &&
+          ingredient.ingredient_id.trim() !== '' &&
           suggestions.length > 0 &&
           !suggestions.some(
-            (item) => item.Name.toLowerCase() === ingredient.name.trim().toLowerCase()
+            (item) => item.Name.toLowerCase() === ingredient.ingredient_id.trim().toLowerCase()
           )
 
         return (
@@ -424,8 +395,8 @@ export default function AddRecipePage() {
               <div style={{ position: 'relative' }}>
                 <input
                   placeholder="Ingredient name"
-                  value={ingredient.name}
-                  onChange={(e) => updateIngredient(index, 'name', e.target.value)}
+                  value={ingredient.ingredient_id}
+                  onChange={(e) => updateIngredient(index, 'ingredient_id', e.target.value)}
                   style={{ padding: 10, width: '100%' }}
                 />
 
