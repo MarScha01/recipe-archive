@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 
 const categories = [
@@ -25,7 +26,8 @@ const sortOptions = [
   'Favorites first'
 ]
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams()
   const [recipes, setRecipes] = useState<any[]>([])
   const [favorites, setFavorites] = useState<number[]>([])
   const [search, setSearch] = useState('')
@@ -49,6 +51,11 @@ export default function Home() {
 
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  useEffect(() => {
+    const favoritesParam = searchParams.get('favorites')
+    setShowOnlyFavorites(favoritesParam === '1')
+  }, [searchParams])
 
   async function fetchData() {
     setMessage('')
@@ -212,17 +219,17 @@ export default function Home() {
   return (
     <div
       style={{
-        padding: isMobile ? 20 : 40,
+        padding: isMobile ? 14 : 40,
         maxWidth: '1300px',
         margin: '0 auto'
       }}
     >
       <h1
         style={{
-          fontSize: isMobile ? '36px' : '48px',
+          fontSize: isMobile ? '28px' : '48px',
           fontWeight: '900',
           textAlign: 'center',
-          marginBottom: '10px'
+          marginBottom: '6px'
         }}
       >
         Recipe Archive
@@ -232,8 +239,8 @@ export default function Home() {
         style={{
           textAlign: 'center',
           color: '#aaa',
-          marginBottom: '30px',
-          fontSize: isMobile ? '14px' : '16px',
+          marginBottom: isMobile ? '16px' : '30px',
+          fontSize: isMobile ? '13px' : '16px',
         }}
       >
         Save, organize, and share your recipes
@@ -242,17 +249,18 @@ export default function Home() {
       <div
         style={{
           display: 'flex',
-          gap: '10px',
+          gap: '8px',
           justifyContent: 'center',
-          marginBottom: '20px',
+          marginBottom: isMobile ? '14px' : '20px',
           flexWrap: 'wrap'
         }}
       >
         <button
           onClick={() => setViewMode('all')}
           style={{
-            padding: '10px 16px',
+            padding: isMobile ? '8px 14px' : '10px 16px',
             borderRadius: '20px',
+            fontSize: isMobile ? '15px' : '16px',
             border: '1px solid #333',
             background: viewMode === 'all' ? '#2c2c2c' : 'transparent',
             color: 'white',
@@ -265,8 +273,9 @@ export default function Home() {
         <button
           onClick={() => setViewMode('mine')}
           style={{
-            padding: '10px 16px',
+            padding: isMobile ? '8px 14px' :  '10px 16px',
             borderRadius: '20px',
+            fontSize: isMobile ? '15px' : '16px',
             border: '1px solid #333',
             background: viewMode === 'mine' ? '#2c2c2c' : 'transparent',
             color: 'white',
@@ -279,12 +288,11 @@ export default function Home() {
 
       <div
         style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px',
-          justifyContent: 'center',
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'ifr auto' : 'minmax(0, 420px) auto auto',
+          gap: '10px',
           alignItems: 'center',
-          marginBottom: '24px'
+          marginBottom: isMobile ? '16px' : '24px'
         }}
       >
         <input
@@ -293,13 +301,14 @@ export default function Home() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
-            padding: '12px',
+            padding: isMobile ? '11px 12px' : '12px',
             width: '100%',
-            maxWidth: isMobile ? '100%' : '420px',
+            maxWidth: '100%',
             borderRadius: '10px',
             border: '1px solid #333',
             background: '#1a1a1a',
-            color: 'white'
+            color: 'white',
+            fontSize: isMobile ? '15px' : '16px'
           }}
         />
 
@@ -307,13 +316,14 @@ export default function Home() {
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
           style={{
-            padding: '12px',
+            padding: isMobile ? '11px 12px' : '12px',
             borderRadius: '10px',
             border: '1px solid #333',
             background: '#1a1a1a',
             color: 'white',
-            minWidth: isMobile ? '100%' : '170px',
-            width: isMobile ? '100%' : 'auto'
+            minWidth: isMobile ? '110px' : '170px',
+            width: 'auto',
+            fontSize: isMobile ? '15px' : '16px'
           }}
         >
           {sortOptions.map((option) => (
@@ -323,21 +333,28 @@ export default function Home() {
           ))}
         </select>
 
-        <button
-          type="button"
-          onClick={() => setShowOnlyFavorites((prev) => !prev)}
-          style={{
-            padding: '12px 16px',
-            borderRadius: '10px',
-            border: '1px solid #333',
-            background: showOnlyFavorites ? '#2c2c2c' : '#1a1a1a',
-            color: 'white',
-            cursor: 'pointer',
-            width: isMobile ? '100%' : 'auto'
-          }}
-        >
-          {showOnlyFavorites ? 'Showing favorites' : 'Show favorites'}
-        </button>
+        {!isMobile && (
+          <button
+            type="button"
+            onClick={() => setShowOnlyFavorites((prev) => !prev)}
+            style={{
+              padding: isMobile ? '9px 12px' : '12px 16px',
+              borderRadius: '10px',
+              border: '1px solid #333',
+              background: showOnlyFavorites ? '#2c2c2c' : '#1a1a1a',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: isMobile ? '14px' : '16px',
+              gridColumn: isMobile ? '1 / 2' : 'auto',
+              justifySelf: isMobile ? 'start' : 'auto',
+              width: isMobile ? 'auto' : 'auto',
+              minWidth: isMobile ? '0' : 'auto',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {showOnlyFavorites ? 'Showing favorites' : 'Show favorites'}
+          </button>
+        )}
       </div>
 
       {message && (
@@ -349,10 +366,13 @@ export default function Home() {
       <div
         style={{
           display: 'flex',
-          flexWrap: 'wrap',
-          gap: '10px',
-          marginBottom: '30px',
-          justifyContent: 'center'
+          flexWrap: isMobile ? 'nowrap' : 'wrap',
+          gap: '8px',
+          marginBottom: isMobile ? '18px' : '30px',
+          justifyContent: isMobile ? 'flex-start' : 'center',
+          overflowX: isMobile ? 'auto' : 'visible',
+          paddingBottom: isMobile ? '4px' : 0,
+          WebkitOverflowScrolling: 'touch'
         }}
       >
         {categories.map((category) => {
@@ -364,8 +384,11 @@ export default function Home() {
               type="button"
               onClick={() => setSelectedCategory(category)}
               style={{
-                padding: '8px 14px',
+                padding: isMobile ? '7px 12px' : '8px 14px',
                 borderRadius: '20px',
+                fontSize: isMobile ? '14px' : '16px',
+                whiteSpace: 'nowrap',
+                flex: '0 0 auto',
                 cursor: 'pointer',
                 border: '1px solid #333',
                 backgroundColor: isActive ? '#2c2c2c' : 'transparent',
@@ -410,13 +433,13 @@ export default function Home() {
                   onClick={() => toggleFavorite(recipe.id)}
                   style={{
                     position: 'absolute',
-                    top: '10px',
-                    right: '10px',
+                    top: isMobile ? '8px' : '10px',
+                    right: isMobile ? '8px' : '10px',
                     zIndex: 2,
                     background: '#111',
                     border: '1px solid #333',
                     borderRadius: '8px',
-                    padding: '6px 10px',
+                    padding: isMobile ? '4px 8px' : '6px 10px',
                     cursor: 'pointer',
                     color: isFav ? '#ffd54f' : '#888'
                   }}
@@ -433,17 +456,17 @@ export default function Home() {
                 >
                   <div
                     style={{
-                      padding: '18px',
+                      padding: isMobile ? '14px' : '18px',
                       border: '1px solid #2a2a2a',
-                      borderRadius: '10px',
+                      borderRadius: '12px',
                       display: 'flex',
-                      gap: '18px',
-                      alignItems: 'center',
+                      gap: isMobile ? '12px' : '18px',
+                      alignItems: isMobile ? 'flex-start' :'center',
                       background: '#1a1a1a',
                       cursor: 'pointer',
                       transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                      flexDirection: isMobile ? 'column' : 'row',
-                      textAlign: isMobile ? 'center' : 'left'
+                      flexDirection: 'row',
+                      textAlign: isMobile ? 'left' : 'left'
                     }}
                     onMouseEnter={(e) => {
                       if (!isMobile) {
@@ -461,9 +484,9 @@ export default function Home() {
                         src={recipe.Image_url}
                         alt={recipe.Name}
                         style={{
-                          width: isMobile ? '100%' : '120px',
-                          maxWidth: isMobile ? '260px' : '120px',
-                          height: isMobile ? '180px' : '120px',
+                          width: isMobile ? '92px' : '120px',
+                          maxWidth: isMobile ? '92px' : '120px',
+                          height: isMobile ? '92px' : '120px',
                           objectFit: 'cover',
                           borderRadius: '10px',
                           flexShrink: 0
@@ -472,9 +495,9 @@ export default function Home() {
                     ) : (
                       <div
                         style={{
-                          width: isMobile ? '100%' : '120px',
-                          maxWidth: isMobile ? '260px' : '120px',
-                          height: isMobile ? '180px' : '120px',
+                          width: isMobile ? '92px' : '120px',
+                          maxWidth: isMobile ? '92px' : '120px',
+                          height: isMobile ? '92px' : '120px',
                           borderRadius: '10px',
                           background: '#222',
                           border: '1px solid #333',
@@ -483,19 +506,28 @@ export default function Home() {
                       />
                     )}
 
-                    <div style={{ minWidth: 0 }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <h2
                         style={{
                           marginBottom: '6px',
-                          fontSize: '20px',
-                          lineHeight: 1.2
+                          fontSize: isMobile ? '17px' : '20px',
+                          lineHeight: 1.2,
+                          fontWeight: 700
                         }}
                       >
                         {recipe.Name}
                       </h2>
 
-                      <p style={{ margin: 0 }}>
-                        {recipe.Category} • Prep {recipe.Prep_time} min • Cook {recipe.Cook_time} min
+                      <p
+                        style={{ margin: 0,
+                          color: '#cfcfcf',
+                          fontSize: isMobile ? '13px' : '16px',
+                          lineHeight: 1.4
+                        }}
+                      >
+                        {recipe.Category} <br /> 
+                        Prep {recipe.Prep_time} min <br /> 
+                        Cook {recipe.Cook_time} min
                       </p>
                     </div>
                   </div>
@@ -574,4 +606,12 @@ export default function Home() {
       )}
     </div>
   )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40, color: 'white' }}>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
+    )
 }
