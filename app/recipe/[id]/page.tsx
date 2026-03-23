@@ -7,7 +7,11 @@ import { supabase } from '../../../lib/supabase'
 
 export default function RecipePage() {
   const params = useParams()
-  const id = params.id
+
+  // Route looks like: /recipe/12-spaghetti-bolognese
+  // We only need the numeric ID at the start
+  const rawId = Array.isArray(params.id) ? params.id[0] : params.id
+  const recipeId = Number(String(rawId).split('-')[0])
 
   const [recipe, setRecipe] = useState<any>(null)
   const [ingredients, setIngredients] = useState<any[]>([])
@@ -25,23 +29,34 @@ export default function RecipePage() {
   const [commentMessage, setCommentMessage] = useState('')
 
   useEffect(() => {
-    if (id) {
+    // Default tab title before recipe loads
+    document.title = 'Recipe Archive'
+
+    if (recipeId) {
       fetchRecipe()
     }
-  }, [id])
+  }, [recipeId])
 
   async function fetchRecipe() {
     setCheckingAccess(true)
     setErrorMessage('')
 
+    // Stop early if the URL does not contain a valid numeric recipe ID
+    if (!recipeId || Number.isNaN(recipeId)) {
+      setErrorMessage('Invalid recipe link.')
+      setCheckingAccess(false)
+      return
+    }
+
     const { data: authData } = await supabase.auth.getUser()
     const currentUser = authData.user
     setCurrentUserId(currentUser?.id || null)
 
+    // Load the recipe by numeric ID
     const { data: recipeData, error: recipeError } = await supabase
       .from('Recipes')
       .select('*')
-      .eq('id', id)
+      .eq('id', recipeId)
       .single()
 
     if (recipeError) {
@@ -68,8 +83,9 @@ export default function RecipePage() {
       setIsAdmin(false)
     }
 
-    const allowedToView =
-      recipeData.is_public === true || owner || admin
+    // Public recipes can be viewed by everyone
+    // Private recipes can only be viewed by owner or admin
+    const allowedToView = recipeData.is_public === true || owner || admin
 
     if (!allowedToView) {
       setCanView(false)
@@ -81,6 +97,10 @@ export default function RecipePage() {
     setCanEdit(owner || admin)
     setRecipe(recipeData)
 
+    // Update browser tab title after recipe loads
+    document.title = `Recipe Archive | ${recipeData.Name}`
+
+    // Load creator display name / username
     if (recipeData.user_id) {
       const { data: profileData } = await supabase
         .from('profiles')
@@ -93,10 +113,11 @@ export default function RecipePage() {
       }
     }
 
+    // Load ingredient rows linked to this recipe
     const { data: ingredientsData, error: ingredientsError } = await supabase
       .from('Recipe_ingredients')
       .select('*')
-      .eq('Recipe_id', id)
+      .eq('Recipe_id', recipeId)
 
     if (ingredientsError) {
       setErrorMessage(`Ingredients error: ${ingredientsError.message}`)
@@ -109,6 +130,7 @@ export default function RecipePage() {
     } else {
       const ingredientIds = ingredientsData.map((item) => item.Ingredient_id)
 
+      // Load actual ingredient names from Ingredients table
       const { data: ingredientNames, error: namesError } = await supabase
         .from('Ingredients')
         .select('id, Name')
@@ -121,7 +143,7 @@ export default function RecipePage() {
       }
 
       const mergedIngredients = ingredientsData.map((item) => {
-        const matchingIngredient = ingredientNames.find(
+        const matchingIngredient = ingredientNames?.find(
           (ingredient) => String(ingredient.id) === String(item.Ingredient_id)
         )
 
@@ -142,7 +164,7 @@ export default function RecipePage() {
     const { data: commentRows, error } = await supabase
       .from('recipe_comments')
       .select('*')
-      .eq('recipe_id', id)
+      .eq('recipe_id', recipeId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -201,7 +223,7 @@ export default function RecipePage() {
     const { error } = await supabase
       .from('recipe_comments')
       .insert({
-        recipe_id: Number(id),
+        recipe_id: recipeId,
         user_id: user.id,
         content: trimmed
       })
@@ -256,6 +278,7 @@ export default function RecipePage() {
     return <div style={{ padding: 40 }}>Loading recipe...</div>
   }
 
+  // Turn instructions into a clean list
   const instructionSteps = recipe.Instructions
     ? recipe.Instructions
         .split('\n')
@@ -263,6 +286,7 @@ export default function RecipePage() {
         .filter((step: string) => step.length > 0)
     : []
 
+  // Turn tag string into individual tags
   const tagList = recipe.Tags
     ? recipe.Tags.split(',')
         .map((tag: string) => tag.trim())
@@ -272,15 +296,9 @@ export default function RecipePage() {
   return (
     <div style={{ padding: 40, maxWidth: '1100px', margin: '0 auto' }}>
       <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
-        <Link href="/">
-          ← Back to recipes
-        </Link>
+        <Link href="/">← Back to recipes</Link>
 
-        {canEdit && (
-          <Link href={`/edit/${recipe.id}`}>
-            Edit recipe
-          </Link>
-        )}
+        {canEdit && <Link href={`/edit/${recipe.id}`}>Edit recipe</Link>}
       </div>
 
       <div style={{ marginBottom: '30px' }}>
@@ -297,17 +315,11 @@ export default function RecipePage() {
 
         <p style={{ margin: '4px 0' }}>Category: {recipe.Category}</p>
 
-        {creatorName && (
-          <p style={{ margin: '4px 0' }}>
-            Created by: {creatorName}
-          </p>
-        )}
+        {creatorName && <p style={{ margin: '4px 0' }}>Created by: {creatorName}</p>}
 
         <p style={{ margin: '4px 0' }}>
           Prep: {recipe.Prep_time} minutes
-          <span style={{ marginLeft: '20px' }}>
-            Cook: {recipe.Cook_time} minutes
-          </span>
+          <span style={{ marginLeft: '20px' }}>Cook: {recipe.Cook_time} minutes</span>
         </p>
 
         {tagList.length > 0 && (
@@ -357,11 +369,7 @@ export default function RecipePage() {
           {ingredients.length > 0 ? (
             <ul style={{ paddingLeft: '20px', margin: 0, lineHeight: 1.8 }}>
               {ingredients.map((item, i) => (
-                <li key={i}>
-                  {[item.Amount, item.Unit, item.IngredientName]
-                    .filter(Boolean)
-                    .join(' ')}
-                </li>
+                <li key={i}>{[item.Amount, item.Unit, item.IngredientName].filter(Boolean).join(' ')}</li>
               ))}
             </ul>
           ) : (
@@ -451,14 +459,10 @@ export default function RecipePage() {
               Add comment
             </button>
 
-            {commentMessage && (
-              <p style={{ marginTop: '10px' }}>{commentMessage}</p>
-            )}
+            {commentMessage && <p style={{ marginTop: '10px' }}>{commentMessage}</p>}
           </div>
         ) : (
-          <p style={{ marginBottom: '20px' }}>
-            Log in to add a comment.
-          </p>
+          <p style={{ marginBottom: '20px' }}>Log in to add a comment.</p>
         )}
 
         {comments.length === 0 ? (
@@ -466,8 +470,7 @@ export default function RecipePage() {
         ) : (
           <div style={{ display: 'grid', gap: '14px' }}>
             {comments.map((comment) => {
-              const canDeleteComment =
-                currentUserId === comment.user_id || isAdmin
+              const canDeleteComment = currentUserId === comment.user_id || isAdmin
 
               return (
                 <div
@@ -508,9 +511,7 @@ export default function RecipePage() {
                     )}
                   </div>
 
-                  <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                    {comment.content}
-                  </p>
+                  <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{comment.content}</p>
                 </div>
               )
             })}

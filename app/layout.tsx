@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import TopNav from "./components/TopNav";
+import CookieBanner from "./components/CookieBanner";
+import Footer from ".//components/Footer";
+import AnalyticsLoader from './components/AnalyticsLoader';
 
 const plex = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -23,9 +26,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={plex.className}>
+      <body className={plex.className} style={{ background: '#111', color: 'white', minHeight:'100vh' }}> 
         <TopNav />
+        <AnalyticsLoader />
         {children}
+        <Footer />
+        <CookieBanner />
       </body>
     </html>
   );

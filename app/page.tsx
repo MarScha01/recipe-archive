@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '../lib/supabase'
+import { slugify } from '../lib/slugify'
 
 const categories = [
   'All',
@@ -448,7 +449,7 @@ function HomeContent() {
                 </button>
 
                 <Link
-                  href={`/recipe/${recipe.id}`}
+                  href={`/recipe/${recipe.id}-${slugify(recipe.Name)}`}
                   style={{
                     textDecoration: 'none',
                     color: 'inherit'

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { slugify } from '../../lib/slugify'
 
 export default function FindPage() {
   const [input, setInput] = useState('')
@@ -210,7 +211,7 @@ export default function FindPage() {
 
           <div>
             <h2 style={{ marginBottom: '6px' }}>
-              <Link href={`/recipe/${recipe.id}`}>{recipe.Name}</Link>
+              <Link href={`/recipe/${recipe.id}-${ slugify(recipe.Name)}`}>{recipe.Name}</Link>
             </h2>
             <p>Category: {recipe.Category}</p>
             <p>Prep: {recipe.Prep_time} minutes</p>

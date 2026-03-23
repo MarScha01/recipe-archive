@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import Link from 'next/link'
+import { slugify } from '../../lib/slugify'
 
 type Profile = {
   id: string
@@ -438,7 +439,7 @@ export default function ProfilePage() {
           {recipes.map((recipe) => (
             <Link
               key={recipe.id}
-              href={`/recipe/${recipe.id}`}
+              href={`/recipe/${recipe.id}-${slugify(recipe.Name)}`}
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <div

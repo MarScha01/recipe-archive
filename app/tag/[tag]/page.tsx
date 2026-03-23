@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
+import { slugify } from '../../../lib/slugify'
 
 export default function TagPage() {
   const params = useParams()
@@ -68,7 +69,7 @@ export default function TagPage() {
         {recipes.map((recipe) => (
           <Link
             key={recipe.id}
-            href={`/recipe/${recipe.id}`}
+            href={`/recipe/${recipe.id}-${slugify(recipe.Name)}`}
             style={{
               textDecoration: 'none',
               color: 'inherit'
