@@ -17,9 +17,9 @@ export default function PrivacyPage() {
         Your data is used to:
       </p>
       <ul>
-        <li> create and manage your account</li>
-        <li> let you post recipes, favorites, and comments</li>
-        <li> keep the site secure and working properly</li>
+        <li> - create and manage your account</li>
+        <li> - let you post recipes, favorites, and comments</li>
+        <li> - keep the site secure and working properly</li>
       </ul>
 
       <br />
