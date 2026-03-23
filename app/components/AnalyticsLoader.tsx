@@ -1,18 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { hasAcceptedAnalytics } from '../../lib/cookieConsent'
 
-export default function
-AnalyticsLoader() {
-	useEffect(() => {
-		if (!hasAcceptedAnalytics())
-return
+export default function AnalyticsLoader() {
+	if (!hasAcceptedAnalytics()) return null
 
-// Put analytics initialization here
-
-		console.log('Analytics Allowed')
-	}, [])
-
-	return null
+	return <Analytics />
 }
