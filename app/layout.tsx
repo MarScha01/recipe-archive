@@ -5,6 +5,7 @@ import TopNav from "./components/TopNav";
 import CookieBanner from "./components/CookieBanner";
 import Footer from ".//components/Footer";
 import AnalyticsLoader from './components/AnalyticsLoader';
+import AuthListener from './components/AuthListener'
 
 const plex = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={plex.className} style={{ background: '#111', color: 'white', minHeight:'100vh' }}> 
         <TopNav />
+        <AuthListener />
         <AnalyticsLoader />
         {children}
         <Footer />
