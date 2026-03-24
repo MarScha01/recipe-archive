@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -54,6 +55,12 @@ export default function LoginPage() {
       >
         Login
       </button>
+
+      <p style={{ marginTop: '14px' }}>
+        <Link href="/forgot-password">
+          Forgot password?
+        </Link>
+      </p>
 
       {message && <p style={{ marginTop: 10 }}>{message}</p>}
     </div>
