@@ -31,6 +31,7 @@ export default function AddRecipePage() {
   const [allIngredients, setAllIngredients] = useState<{ id: number; Name: string }[]>([])
   const [message, setMessage] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState<number |null>(null)
 
   useEffect(() => {
     loadIngredients()
@@ -61,6 +62,7 @@ export default function AddRecipePage() {
   }
 
   function addIngredientRow() {
+    setActiveSuggestionIndex(null)
     setIngredients([...ingredients, { name: '', ingredient_id: '', amount: '', unit: '' }])
   }
 
@@ -87,6 +89,7 @@ export default function AddRecipePage() {
 
     updatedIngredients[index].ingredient_id = String(suggestion.id)
       setIngredients(updatedIngredients)
+      setActiveSuggestionIndex(null)
   }
 
   function resizeImage(file: File, maxWidth = 1200, quality = 0.8) {
@@ -258,17 +261,35 @@ export default function AddRecipePage() {
 
       //if no ID -> create ingredient
       if (!ingredientId) {
-        const { data: newIngredient, error: newIngredientError } = await supabase
-          .from('Ingredients')
-          .insert({ Name: ingredient.name })
-          .select()
-          .single()
+        const cleanedName = ingredient.name.trim().replace(/\s+/g, '')
 
-        if(newIngredientError) { setMessage('Error creating ingredient')
+        const { data: existingIngredient, error: existingIngredientError } = await supabase
+          .from('ingredients')
+          .select('id, Name')
+          .ilike('Name', cleanedName)
+          .maybeSingle()
+
+        if (existingIngredientError) {
+          setMessage(`Ingredient lookup error: ${existingIngredientError.message}`) 
           return
         }
 
-        ingredientId = newIngredient.id
+        if (existingIngredient) {
+          ingredientId = existingIngredient.id
+        } else {
+          const { data: newIngredient, error: newIngredientError } = await supabase
+            .from('Ingredients')
+            .insert({ Name: cleanedName })
+            .select()
+            .single()
+
+          if (newIngredientError) {
+            setMessage(`Error creating ingredient: ${newIngredientError.message }`) 
+            return
+          }
+          
+          ingredientId = newIngredient.id
+        }
       }
 
       const { error: recipeIngredientError } = await supabase
@@ -391,6 +412,7 @@ export default function AddRecipePage() {
       {ingredients.map((ingredient, index) => {
         const suggestions = getSuggestions(ingredient.name)
         const showSuggestions =
+          activeSuggestionIndex === index &&
           ingredient.name.trim() !== '' &&
           suggestions.length > 0 &&
           !suggestions.some(
@@ -411,9 +433,16 @@ export default function AddRecipePage() {
                 <input
                   placeholder="Ingredient name"
                   value={ingredient.name}
+                  onFocus={() => setActiveSuggestionIndex(index)}
                   onChange={(e) => { 
+                    setActiveSuggestionIndex(index)
                     updateIngredient(index, 'name', e.target.value)
                     updateIngredient(index, 'ingredient_id', '')
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => {
+
+                    setActiveSuggestionIndex((current) => (current === index ? null : current))}, 150)
                   }}
                   style={{ padding: 10, width: '100%' }}
                 />
@@ -459,6 +488,7 @@ export default function AddRecipePage() {
               <input
                 placeholder="Amount"
                 value={ingredient.amount}
+                onFocus={() => setActiveSuggestionIndex(null)}
                 onChange={(e) => updateIngredient(index, 'amount', e.target.value)}
                 style={{ padding: 10, width: '100%' }}
               />
@@ -466,6 +496,7 @@ export default function AddRecipePage() {
               <input
                 placeholder="Unit"
                 value={ingredient.unit}
+                onFocus={() => setActiveSuggestionIndex(null)}
                 onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
                 style={{ padding: 10, width: '100%' }}
               />
