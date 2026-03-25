@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 
 function isValidPassword(password: string) {
   const hasMinLength = password.length >= 8
-  const hasLetter = / [a-ZA-Z]/test(password)
+  const hasLetter = / [a-zA-Z]/.test(password)
   const hasNumber = / [0-9]/.test(password)
 
   return hasMinLength && hasLetter && hasNumber
