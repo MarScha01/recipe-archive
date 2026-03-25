@@ -63,6 +63,9 @@ export default function ResetPasswordPage() {
     setLoading(false)
     setPassword('')
     setConfirmPassword('')
+
+    await supabase.auth.signOut()
+    window.location.href = '/login'
   }
 
   return (
