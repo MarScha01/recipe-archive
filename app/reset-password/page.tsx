@@ -3,6 +3,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
+function isValidPassword(password: string) {
+  const hasMinLength = password.length >= 8
+  const hasLetter = / [a-ZA-Z]/test(password)
+  const hasNumber = / [0-9]/.test(password)
+
+  return hasMinLength && hasLetter && hasNumber
+}
+
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -38,7 +46,7 @@ export default function ResetPasswordPage() {
     }
 
     if (password.length < 8) {
-      setMessage('Password must be at least 8 characters.')
+      setMessage('Password must be at least 8 characters and include a letter and number.')
       return
     }
 

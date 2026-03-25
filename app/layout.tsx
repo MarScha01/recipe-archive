@@ -6,6 +6,7 @@ import CookieBanner from "./components/CookieBanner";
 import Footer from ".//components/Footer";
 import AnalyticsLoader from './components/AnalyticsLoader';
 import AuthListener from './components/AuthListener'
+import { Analytics } from "@vercel/analytics/next"
 
 const plex = IBM_Plex_Sans({
   subsets: ["latin"],

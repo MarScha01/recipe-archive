@@ -3,6 +3,14 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
+function isValidPassword(password: string) {
+  const hasMinLength = password.length >= 8
+  const hasLetter = /[a-zA-Z]/.test(password)
+  const hasNumber = /[0-9]/.test(password)
+
+  return hasMinLength && hasLetter && hasNumber
+}
+
 export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -43,6 +51,11 @@ export default function SignupPage() {
 
     if (existingUser) {
       setMessage('That username is already taken.')
+      return
+    }
+
+    if (!isValidPassword(password)) {
+      setMessage('Password must be at least 8 characters and include and letter and a number')
       return
     }
 
@@ -102,6 +115,10 @@ export default function SignupPage() {
         onChange={(e) => setPassword(e.target.value)}
         style={{ display: 'block', marginBottom: 10, padding: 10, width: '100%' }}
       />
+
+      <p style={{ fontSize: '12px', color: "#aaa", marginTop: '4px' }}>
+        At least 8 characters, with a letter and a number.
+      </p>
 
       <button
         onClick={handleSignup}
