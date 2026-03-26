@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
 
-export default function RecipePage() {
+export default function RecipePageClient() {
   const params = useParams()
 
   // Route looks like: /recipe/12-spaghetti-bolognese

@@ -34,13 +34,26 @@ export default async function sitemap() {
   }
 
   const publicRecipeUrls = recipes
-    .filter((recipe) => recipe.is_public === true)
-    .map((recipe) => ({
-      url: `${siteUrl}/recipe/${recipe.id}-${slugifyName(recipe.Name)}`,
-      lastModified: new Date(),
-    }))
+    .filter(
+      (recipe) =>
+        recipe.is_public === true &&
+        recipe.id &&
+        recipe.Name &&
+        recipe.Name.trim().length > 0
+    )
+    .map((recipe) => {
+      const slug = slugifyName(recipe.Name)
 
-  return [
+      if (!slug) return null
+
+      return {
+        url: `${siteUrl}/recipe/${recipe.id}-${slug}`,
+        lastModified: new Date(),
+      }
+    })
+    .filter(Boolean)
+
+    return [
     {
       url: siteUrl,
       lastModified: new Date(),
