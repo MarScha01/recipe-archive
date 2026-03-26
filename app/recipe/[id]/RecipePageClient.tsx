@@ -1,9 +1,49 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
+
+function createRecipeJsonLd(
+  recipe: any,
+  ingredients: any[],
+  creatorName: string,
+  instructionSteps: string[]
+) {
+  if (!recipe) return null
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Recipe',
+    name: recipe.Name,
+    description: recipe.Notes || `Recipe for ${recipe.Name}`,
+    recipeCategory: recipe.Category || undefined,
+    image: recipe.Image_url ? [recipe.Image_url] : undefined,
+    author: creatorName
+      ? {
+          '@type': 'Person',
+          name: creatorName,
+        }
+      : undefined,
+    prepTime: recipe.Prep_time ? `PT${recipe.Prep_time}M` : undefined,
+    cookTime: recipe.Cook_time ? `PT${recipe.Cook_time}M` : undefined,
+    recipeIngredient:
+      ingredients.length > 0
+        ? ingredients.map((item) =>
+            [item.Amount, item.Unit, item.IngredientName].filter(Boolean).join(' ')
+          )
+        : undefined,
+    recipeInstructions:
+      instructionSteps.length > 0
+        ? instructionSteps.map((step) => ({
+            '@type': 'HowToStep',
+            text: step,
+          }))
+        : undefined,
+    keywords: recipe.Tags || undefined,
+  }
+}
 
 export default function RecipePageClient() {
   const params = useParams()
@@ -29,9 +69,6 @@ export default function RecipePageClient() {
   const [commentMessage, setCommentMessage] = useState('')
 
   useEffect(() => {
-    // Default tab title before recipe loads
-    document.title = 'Recipe Archive'
-
     if (recipeId) {
       fetchRecipe()
     }
@@ -97,9 +134,6 @@ export default function RecipePageClient() {
     setCanEdit(owner || admin)
     setRecipe(recipeData)
 
-    // Update browser tab title after recipe loads
-    document.title = `Recipe Archive | ${recipeData.Name}`
-
     // Load creator display name / username
     if (recipeData.user_id) {
       const { data: profileData } = await supabase
@@ -149,7 +183,7 @@ export default function RecipePageClient() {
 
         return {
           ...item,
-          IngredientName: matchingIngredient ? matchingIngredient.Name : 'Unknown ingredient'
+          IngredientName: matchingIngredient ? matchingIngredient.Name : 'Unknown ingredient',
         }
       })
 
@@ -195,7 +229,7 @@ export default function RecipePageClient() {
 
       return {
         ...comment,
-        authorName: author?.display_name || author?.username || 'Unknown user'
+        authorName: author?.display_name || author?.username || 'Unknown user',
       }
     })
 
@@ -220,13 +254,11 @@ export default function RecipePageClient() {
       return
     }
 
-    const { error } = await supabase
-      .from('recipe_comments')
-      .insert({
-        recipe_id: recipeId,
-        user_id: user.id,
-        content: trimmed
-      })
+    const { error } = await supabase.from('recipe_comments').insert({
+      recipe_id: recipeId,
+      user_id: user.id,
+      content: trimmed,
+    })
 
     if (error) {
       setCommentMessage(`Comment error: ${error.message}`)
@@ -242,10 +274,7 @@ export default function RecipePageClient() {
     const confirmed = window.confirm('Delete this comment?')
     if (!confirmed) return
 
-    const { error } = await supabase
-      .from('recipe_comments')
-      .delete()
-      .eq('id', commentId)
+    const { error } = await supabase.from('recipe_comments').delete().eq('id', commentId)
 
     if (error) {
       setCommentMessage(`Delete comment error: ${error.message}`)
@@ -278,7 +307,7 @@ export default function RecipePageClient() {
     return <div style={{ padding: 40 }}>Loading recipe...</div>
   }
 
-  // Turn instructions into a clean list
+  // Turn instructions string into a clean list
   const instructionSteps = recipe.Instructions
     ? recipe.Instructions
         .split('\n')
@@ -293,8 +322,19 @@ export default function RecipePageClient() {
         .filter((tag: string) => tag.length > 0)
     : []
 
+  // Build structured data from the actual loaded recipe data
+const jsonLd = createRecipeJsonLd(recipe, ingredients, creatorName, instructionSteps)
   return (
     <div style={{ padding: 40, maxWidth: '1100px', margin: '0 auto' }}>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd),
+          }}
+        />
+      )}
+
       <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
         <Link href="/">← Back to recipes</Link>
 
@@ -307,7 +347,7 @@ export default function RecipePageClient() {
             fontSize: '40px',
             fontWeight: '800',
             marginBottom: '10px',
-            letterSpacing: '0.5px'
+            letterSpacing: '0.5px',
           }}
         >
           {recipe.Name}
@@ -328,7 +368,7 @@ export default function RecipePageClient() {
               display: 'flex',
               flexWrap: 'wrap',
               gap: '8px',
-              marginTop: '14px'
+              marginTop: '14px',
             }}
           >
             {tagList.map((tag: string, index: number) => (
@@ -343,7 +383,7 @@ export default function RecipePageClient() {
                   fontSize: '14px',
                   textDecoration: 'none',
                   color: 'white',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
                 }}
               >
                 {tag}
@@ -360,7 +400,7 @@ export default function RecipePageClient() {
           justifyContent: 'space-between',
           gap: '40px',
           flexWrap: 'wrap',
-          marginBottom: '40px'
+          marginBottom: '40px',
         }}
       >
         <div style={{ flex: '1 1 320px', minWidth: '260px' }}>
@@ -383,7 +423,7 @@ export default function RecipePageClient() {
               flex: '1 1 260px',
               minWidth: '220px',
               maxWidth: '380px',
-              width: '100%'
+              width: '100%',
             }}
           >
             <img
@@ -395,7 +435,7 @@ export default function RecipePageClient() {
                 maxWidth: '380px',
                 height: 'auto',
                 display: 'block',
-                borderRadius: '14px'
+                borderRadius: '14px',
               }}
             />
           </div>
@@ -440,7 +480,7 @@ export default function RecipePageClient() {
                 border: '1px solid #333',
                 background: '#1a1a1a',
                 color: 'white',
-                marginBottom: '10px'
+                marginBottom: '10px',
               }}
             />
 
@@ -453,7 +493,7 @@ export default function RecipePageClient() {
                 border: '1px solid #333',
                 background: '#1a1a1a',
                 color: 'white',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
               Add comment
@@ -479,7 +519,7 @@ export default function RecipePageClient() {
                     border: '1px solid #2a2a2a',
                     borderRadius: '10px',
                     padding: '14px',
-                    background: '#1a1a1a'
+                    background: '#1a1a1a',
                   }}
                 >
                   <div
@@ -488,7 +528,7 @@ export default function RecipePageClient() {
                       justifyContent: 'space-between',
                       gap: '12px',
                       alignItems: 'center',
-                      marginBottom: '8px'
+                      marginBottom: '8px',
                     }}
                   >
                     <strong>{comment.authorName}</strong>
@@ -503,7 +543,7 @@ export default function RecipePageClient() {
                           border: '1px solid #333',
                           background: '#111',
                           color: 'white',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
                         }}
                       >
                         Delete

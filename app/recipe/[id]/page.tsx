@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { createClient } from '@supabase/supabase-js'
 import RecipePageClient from './RecipePageClient'
 
@@ -8,19 +9,11 @@ type PageProps = {
   }>
 }
 
-/**
- * Server-side Supabase client for metadata fetching
- * Uses your public anon key from env vars
- */
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-/**
- * Extract numeric recipe ID from URL like:
- * 12-spaghetti-bolognese
- */
 function getRecipeIdFromParam(rawId: string) {
   const idPart = rawId.split('-')[0]
   const recipeId = Number(idPart)
@@ -32,40 +25,63 @@ function getRecipeIdFromParam(rawId: string) {
   return recipeId
 }
 
-/**
- * Dynamic SEO metadata for recipe pages
- */
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params
-  const recipeId = getRecipeIdFromParam(id)
+async function getRecipeForSeo(rawId: string) {
+  const recipeId = getRecipeIdFromParam(rawId)
 
-  if (!recipeId) {
-    return {
-      title: 'Recipe not found',
-      description: 'This recipe could not be found.',
-    }
-  }
+  if (!recipeId) return null
 
   const { data: recipe } = await supabase
     .from('Recipes')
-    .select('Name, Category, Prep_time, Cook_time, is_public')
+    .select('id, Name, Category, Prep_time, Cook_time, Notes, Image_url, Tags, Instructions, is_public')
     .eq('id', recipeId)
     .maybeSingle()
+
+  if (!recipe || recipe.is_public !== true) {
+    return null
+  }
+
+  return recipe
+}
+
+function createRecipeJsonLd(recipe: any) {
+  if (!recipe) return null
+
+  const instructionSteps =
+    recipe.Instructions && typeof recipe.Instructions === 'string'
+      ? recipe.Instructions
+          .split('\n')
+          .map((step: string) => step.trim())
+          .filter((step: string) => step.length > 0)
+      : []
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Recipe',
+    name: recipe.Name,
+    description: recipe.Notes || `Recipe for ${recipe.Name}`,
+    recipeCategory: recipe.Category || undefined,
+    image: recipe.Image_url ? [recipe.Image_url] : undefined,
+    prepTime: recipe.Prep_time ? `PT${recipe.Prep_time}M` : undefined,
+    cookTime: recipe.Cook_time ? `PT${recipe.Cook_time}M` : undefined,
+    keywords: recipe.Tags || undefined,
+    recipeInstructions:
+      instructionSteps.length > 0
+        ? instructionSteps.map((step: string) => ({
+            '@type': 'HowToStep',
+            text: step,
+          }))
+        : undefined,
+  }
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params
+  const recipe = await getRecipeForSeo(id)
 
   if (!recipe) {
     return {
       title: 'Recipe not found',
       description: 'This recipe could not be found.',
-    }
-  }
-
-  /**
-   * Don't expose private recipe details in metadata
-   */
-  if (recipe.is_public !== true) {
-    return {
-      title: 'Private recipe',
-      description: 'This recipe is private.',
     }
   }
 
@@ -92,9 +108,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-/**
- * Render the existing client-side recipe page
- */
-export default function Page() {
-  return <RecipePageClient />
+export default async function Page({ params }: PageProps) {
+  const { id } = await params
+  const recipe = await getRecipeForSeo(id)
+  const jsonLd = createRecipeJsonLd(recipe)
+
+  return (
+    <>
+      {jsonLd && (
+        <Script
+          id="recipe-jsonld"
+          type="application/ld+json"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd),
+          }}
+        />
+      )}
+
+      <RecipePageClient />
+    </>
+  )
 }
