@@ -13,7 +13,7 @@ export const metadata = {
     default: 'Recipe Archive - Save, organize, and discover recipes',
     template: '%s - Recipe Archive' },
   description: 'Store your recipes, find meals by ingredient, and organize your cooking in one place.',
-  Verification: {
+  verification: {
     google: 'DpKa9AGg1ACk-MQxi0hCP51381gkBBCGbaGgp6EJ7_8'
   }
 };
