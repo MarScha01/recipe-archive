@@ -8,18 +8,17 @@ import AnalyticsLoader from './components/AnalyticsLoader';
 import AuthListener from './components/AuthListener'
 import { Analytics } from "@vercel/analytics/next"
 
+export const metadata = {
+  title: {
+    default: 'Rechipe Archives - Save, organize, and discover recipes',
+    template: '%s - Recipes Archive' },
+  description: 'Store your recipes, find meals by ingredient, and organize your cooking in one place.',
+};
+
 const plex = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
-
-export const metadata: Metadata = {
-  title: {
-    default: "Recipe Archive",
-    template: "%s | Recipe Archive",
-  },
-  description: "Save, organize, and share your favorite recipes."
-};
 
 export default function RootLayout({
   children,

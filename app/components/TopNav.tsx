@@ -231,6 +231,11 @@ export default function TopNav() {
                   <Link href="/profile" onClick={closeMenu}>
                     {displayName || 'Profile'}
                   </Link>
+                  
+                  <Link href="/account" onClick={() => setMenuOpen(false)}>
+                    Account settings
+                  </Link>
+
                   <button
                     onClick={handleLogout}
                     style={{
