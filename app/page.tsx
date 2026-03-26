@@ -5,7 +5,11 @@ import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 import { slugify } from '../lib/slugify'
+import RecentlyViewed from './components/RecentlyViewed'
 
+/**
+ * Available category filter options
+ */
 const categories = [
   'All',
   'Meals',
@@ -16,19 +20,26 @@ const categories = [
   'Dessert',
   'Snacks',
   'Sides',
-  'Drinks'
+  'Drinks',
 ]
 
+/**
+ * Available sort options
+ */
 const sortOptions = [
   'Newest',
   'Alphabetical',
   'Prep time',
   'Cook time',
-  'Favorites first'
+  'Favorites first',
 ]
 
 function HomeContent() {
   const searchParams = useSearchParams()
+
+  /**
+   * Main page state
+   */
   const [recipes, setRecipes] = useState<any[]>([])
   const [favorites, setFavorites] = useState<number[]>([])
   const [search, setSearch] = useState('')
@@ -40,6 +51,12 @@ function HomeContent() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
 
+  /**
+   * On first load:
+   * - load recipes
+   * - load favorites
+   * - set responsive width tracking
+   */
   useEffect(() => {
     fetchData()
 
@@ -53,11 +70,18 @@ function HomeContent() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  /**
+   * If the URL contains ?favorites=1,
+   * automatically enable favorites-only view
+   */
   useEffect(() => {
     const favoritesParam = searchParams.get('favorites')
     setShowOnlyFavorites(favoritesParam === '1')
   }, [searchParams])
 
+  /**
+   * Load recipes + logged in user + favorites
+   */
   async function fetchData() {
     setMessage('')
 
@@ -99,6 +123,9 @@ function HomeContent() {
     }
   }
 
+  /**
+   * Add or remove a recipe from favorites
+   */
   async function toggleFavorite(recipeId: number) {
     setMessage('')
 
@@ -137,7 +164,7 @@ function HomeContent() {
         .from('recipe_favorites')
         .insert({
           user_id: user.id,
-          recipe_id: recipeId
+          recipe_id: recipeId,
         })
 
       if (error) {
@@ -150,9 +177,20 @@ function HomeContent() {
     }
   }
 
+  /**
+   * Responsive breakpoints
+   */
   const isTabletOrSmaller = windowWidth < 980
   const isMobile = windowWidth < 760
 
+  /**
+   * Apply:
+   * - search
+   * - category filter
+   * - favorites filter
+   * - public/my recipes view
+   * - sorting
+   */
   const filteredRecipes = recipes
     .filter((recipe) => {
       const searchTerm = search.toLowerCase()
@@ -201,6 +239,9 @@ function HomeContent() {
       return (b.id || 0) - (a.id || 0)
     })
 
+  /**
+   * Build sidebar tag list from all recipes
+   */
   const allTags = useMemo(() => {
     const tagSet = new Set<string>()
 
@@ -222,20 +263,22 @@ function HomeContent() {
       style={{
         padding: isMobile ? 14 : 40,
         maxWidth: '1300px',
-        margin: '0 auto'
+        margin: '0 auto',
       }}
     >
+      {/* Page title */}
       <h1
         style={{
           fontSize: isMobile ? '28px' : '48px',
           fontWeight: '900',
           textAlign: 'center',
-          marginBottom: '6px'
+          marginBottom: '6px',
         }}
       >
         Recipe Archive
       </h1>
 
+      {/* Subtitle */}
       <p
         style={{
           textAlign: 'center',
@@ -247,13 +290,14 @@ function HomeContent() {
         Save, organize, and share your recipes
       </p>
 
+      {/* View toggle: all recipes / my recipes */}
       <div
         style={{
           display: 'flex',
           gap: '8px',
           justifyContent: 'center',
           marginBottom: isMobile ? '14px' : '20px',
-          flexWrap: 'wrap'
+          flexWrap: 'wrap',
         }}
       >
         <button
@@ -265,7 +309,7 @@ function HomeContent() {
             border: '1px solid #333',
             background: viewMode === 'all' ? '#2c2c2c' : 'transparent',
             color: 'white',
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
         >
           All recipes
@@ -274,26 +318,27 @@ function HomeContent() {
         <button
           onClick={() => setViewMode('mine')}
           style={{
-            padding: isMobile ? '8px 14px' :  '10px 16px',
+            padding: isMobile ? '8px 14px' : '10px 16px',
             borderRadius: '20px',
             fontSize: isMobile ? '15px' : '16px',
             border: '1px solid #333',
             background: viewMode === 'mine' ? '#2c2c2c' : 'transparent',
             color: 'white',
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
         >
           My recipes
         </button>
       </div>
 
+      {/* Search / sort / favorites controls */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? 'ifr auto' : 'minmax(0, 420px) auto auto',
+          gridTemplateColumns: isMobile ? '1fr auto' : 'minmax(0, 420px) auto auto',
           gap: '10px',
           alignItems: 'center',
-          marginBottom: isMobile ? '16px' : '24px'
+          marginBottom: isMobile ? '16px' : '24px',
         }}
       >
         <input
@@ -309,7 +354,7 @@ function HomeContent() {
             border: '1px solid #333',
             background: '#1a1a1a',
             color: 'white',
-            fontSize: isMobile ? '15px' : '16px'
+            fontSize: isMobile ? '15px' : '16px',
           }}
         />
 
@@ -324,7 +369,7 @@ function HomeContent() {
             color: 'white',
             minWidth: isMobile ? '110px' : '170px',
             width: 'auto',
-            fontSize: isMobile ? '15px' : '16px'
+            fontSize: isMobile ? '15px' : '16px',
           }}
         >
           {sortOptions.map((option) => (
@@ -350,7 +395,7 @@ function HomeContent() {
               justifySelf: isMobile ? 'start' : 'auto',
               width: isMobile ? 'auto' : 'auto',
               minWidth: isMobile ? '0' : 'auto',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
             }}
           >
             {showOnlyFavorites ? 'Showing favorites' : 'Show favorites'}
@@ -358,12 +403,14 @@ function HomeContent() {
         )}
       </div>
 
+      {/* Status / auth / favorites messages */}
       {message && (
         <p style={{ textAlign: 'center', marginBottom: '20px' }}>
           {message}
         </p>
       )}
 
+      {/* Category filters */}
       <div
         style={{
           display: 'flex',
@@ -373,7 +420,7 @@ function HomeContent() {
           justifyContent: isMobile ? 'flex-start' : 'center',
           overflowX: isMobile ? 'auto' : 'visible',
           paddingBottom: isMobile ? '4px' : 0,
-          WebkitOverflowScrolling: 'touch'
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {categories.map((category) => {
@@ -393,7 +440,7 @@ function HomeContent() {
                 cursor: 'pointer',
                 border: '1px solid #333',
                 backgroundColor: isActive ? '#2c2c2c' : 'transparent',
-                color: 'white'
+                color: 'white',
               }}
             >
               {category}
@@ -402,6 +449,7 @@ function HomeContent() {
         })}
       </div>
 
+      {/* Main content area: recipes + tag sidebar */}
       <div
         style={{
           display: 'grid',
@@ -409,14 +457,15 @@ function HomeContent() {
             ? '1fr'
             : 'minmax(0, 1fr) 240px',
           gap: '28px',
-          alignItems: 'start'
+          alignItems: 'start',
         }}
       >
+        {/* Recipe cards */}
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-            gap: '20px'
+            gap: '20px',
           }}
         >
           {filteredRecipes.map((recipe) => {
@@ -426,9 +475,10 @@ function HomeContent() {
               <div
                 key={recipe.id}
                 style={{
-                  position: 'relative'
+                  position: 'relative',
                 }}
               >
+                {/* Favorite button */}
                 <button
                   type="button"
                   onClick={() => toggleFavorite(recipe.id)}
@@ -442,17 +492,18 @@ function HomeContent() {
                     borderRadius: '8px',
                     padding: isMobile ? '4px 8px' : '6px 10px',
                     cursor: 'pointer',
-                    color: isFav ? '#ffd54f' : '#888'
+                    color: isFav ? '#ffd54f' : '#888',
                   }}
                 >
                   ★
                 </button>
 
+                {/* Recipe link card */}
                 <Link
                   href={`/recipe/${recipe.id}-${slugify(recipe.Name)}`}
                   style={{
                     textDecoration: 'none',
-                    color: 'inherit'
+                    color: 'inherit',
                   }}
                 >
                   <div
@@ -462,12 +513,12 @@ function HomeContent() {
                       borderRadius: '12px',
                       display: 'flex',
                       gap: isMobile ? '12px' : '18px',
-                      alignItems: isMobile ? 'flex-start' :'center',
+                      alignItems: isMobile ? 'flex-start' : 'center',
                       background: '#1a1a1a',
                       cursor: 'pointer',
                       transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                       flexDirection: 'row',
-                      textAlign: isMobile ? 'left' : 'left'
+                      textAlign: 'left',
                     }}
                     onMouseEnter={(e) => {
                       if (!isMobile) {
@@ -490,7 +541,7 @@ function HomeContent() {
                           height: isMobile ? '92px' : '120px',
                           objectFit: 'cover',
                           borderRadius: '10px',
-                          flexShrink: 0
+                          flexShrink: 0,
                         }}
                       />
                     ) : (
@@ -502,7 +553,7 @@ function HomeContent() {
                           borderRadius: '10px',
                           background: '#222',
                           border: '1px solid #333',
-                          flexShrink: 0
+                          flexShrink: 0,
                         }}
                       />
                     )}
@@ -513,21 +564,22 @@ function HomeContent() {
                           marginBottom: '6px',
                           fontSize: isMobile ? '17px' : '20px',
                           lineHeight: 1.2,
-                          fontWeight: 700
+                          fontWeight: 700,
                         }}
                       >
                         {recipe.Name}
                       </h2>
 
                       <p
-                        style={{ margin: 0,
+                        style={{
+                          margin: 0,
                           color: '#cfcfcf',
                           fontSize: isMobile ? '13px' : '16px',
-                          lineHeight: 1.4
+                          lineHeight: 1.4,
                         }}
                       >
-                        {recipe.Category} <br /> 
-                        Prep {recipe.Prep_time} min <br /> 
+                        {recipe.Category} <br />
+                        Prep {recipe.Prep_time} min <br />
                         Cook {recipe.Cook_time} min
                       </p>
                     </div>
@@ -538,11 +590,12 @@ function HomeContent() {
           })}
         </div>
 
+        {/* Tag sidebar */}
         <aside
           style={{
             position: isTabletOrSmaller ? 'static' : 'sticky',
             top: isTabletOrSmaller ? 'auto' : '84px',
-            alignSelf: 'start'
+            alignSelf: 'start',
           }}
         >
           <div
@@ -550,14 +603,14 @@ function HomeContent() {
               background: '#1a1a1a',
               border: '1px solid #2a2a2a',
               borderRadius: '12px',
-              padding: '18px'
+              padding: '18px',
             }}
           >
             <h2
               style={{
                 marginTop: 0,
                 marginBottom: '16px',
-                fontSize: '20px'
+                fontSize: '20px',
               }}
             >
               Tags
@@ -572,7 +625,7 @@ function HomeContent() {
                 style={{
                   display: 'flex',
                   flexWrap: 'wrap',
-                  gap: '8px'
+                  gap: '8px',
                 }}
               >
                 {allTags.map((tag) => (
@@ -586,7 +639,7 @@ function HomeContent() {
                       background: '#111',
                       fontSize: '14px',
                       textDecoration: 'none',
-                      color: 'white'
+                      color: 'white',
                     }}
                   >
                     {tag}
@@ -598,6 +651,12 @@ function HomeContent() {
         </aside>
       </div>
 
+      {/* Recently viewed section */}
+      <div style={{ marginTop: '50px' }}>
+        <RecentlyViewed />
+      </div>
+
+      {/* Empty state */}
       {filteredRecipes.length === 0 && (
         <p style={{ marginTop: '30px', textAlign: 'center' }}>
           {viewMode === 'mine'
@@ -609,10 +668,13 @@ function HomeContent() {
   )
 }
 
+/**
+ * Wrapper with Suspense for useSearchParams
+ */
 export default function Home() {
   return (
     <Suspense fallback={<div style={{ padding: 40, color: 'white' }}>Loading...</div>}>
       <HomeContent />
     </Suspense>
-    )
+  )
 }

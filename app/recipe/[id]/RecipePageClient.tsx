@@ -28,11 +28,42 @@ export default function RecipePageClient() {
   const [newComment, setNewComment] = useState('')
   const [commentMessage, setCommentMessage] = useState('')
 
+  /**
+   * Load the recipe when the page opens or the recipe ID changes
+   */
   useEffect(() => {
     if (recipeId) {
       fetchRecipe()
     }
   }, [recipeId])
+
+  /**
+   * Save recently viewed recipe in localStorage
+   * This must be OUTSIDE fetchRecipe.
+   * It runs whenever `recipe` changes.
+   */
+  useEffect(() => {
+    if (!recipe) return
+
+    const stored = localStorage.getItem('recentRecipes')
+    let recent = stored ? JSON.parse(stored) : []
+
+    // Remove duplicate if this recipe is already in the list
+    recent = recent.filter((item: any) => item.id !== recipe.id)
+
+    // Add current recipe to the start of the list
+    recent.unshift({
+      id: recipe.id,
+      name: recipe.Name,
+      image: recipe.Image_url,
+      slug: `${recipe.id}-${recipe.Name.toLowerCase().replace(/\s+/g, '-')}`,
+    })
+
+    // Keep only the 10 most recent recipes
+    recent = recent.slice(0, 10)
+
+    localStorage.setItem('recentRecipes', JSON.stringify(recent))
+  }, [recipe])
 
   async function fetchRecipe() {
     setCheckingAccess(true)
@@ -282,10 +313,8 @@ export default function RecipePageClient() {
         .filter((tag: string) => tag.length > 0)
     : []
 
-  // Build structured data from the actual loaded recipe data
   return (
     <div style={{ padding: 40, maxWidth: '1100px', margin: '0 auto' }}>
-
       <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
         <Link href="/">← Back to recipes</Link>
 
