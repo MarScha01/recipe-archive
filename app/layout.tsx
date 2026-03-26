@@ -14,7 +14,7 @@ export const metadata = {
     template: '%s - Recipe Archive' },
   description: 'Store your recipes, find meals by ingredient, and organize your cooking in one place.',
   Verification: {
-    google: '<meta name="google-site-verification" content="DpKa9AGg1ACk-MQxi0hCP51381gkBBCGbaGgp6EJ7_8" />'
+    google: 'DpKa9AGg1ACk-MQxi0hCP51381gkBBCGbaGgp6EJ7_8'
   }
 };
 
