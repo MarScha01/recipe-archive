@@ -11,7 +11,7 @@ import { Analytics } from "@vercel/analytics/next"
 export const metadata = {
   title: {
     default: 'Recipe Archive - Save, organize, and discover recipes',
-    template: '%s - Recipe Archive' },
+    template: '%s - Recipe Archives' },
   description: 'Store your recipes, find meals by ingredient, and organize your cooking in one place.',
   verification: {
     google: 'DpKa9AGg1ACk-MQxi0hCP51381gkBBCGbaGgp6EJ7_8'
