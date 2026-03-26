@@ -10,9 +10,12 @@ import { Analytics } from "@vercel/analytics/next"
 
 export const metadata = {
   title: {
-    default: 'Rechipe Archives - Save, organize, and discover recipes',
-    template: '%s - Recipes Archive' },
+    default: 'Recipe Archive - Save, organize, and discover recipes',
+    template: '%s - Recipe Archive' },
   description: 'Store your recipes, find meals by ingredient, and organize your cooking in one place.',
+  Verification: {
+    google: '<meta name="google-site-verification" content="DpKa9AGg1ACk-MQxi0hCP51381gkBBCGbaGgp6EJ7_8" />'
+  }
 };
 
 const plex = IBM_Plex_Sans({
