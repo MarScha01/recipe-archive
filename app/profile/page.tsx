@@ -487,7 +487,7 @@ export default function ProfilePage() {
           {recipes.map((recipe) => (
             <Link
               key={recipe.id}
-              href={`/recipes/${recipe.id}-${slugify(recipe.Name)}`}
+              href={`/recipe/${recipe.id}-${slugify(recipe.Name)}`}
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <div
