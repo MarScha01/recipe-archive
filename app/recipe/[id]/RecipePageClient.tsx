@@ -1,49 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
-
-function createRecipeJsonLd(
-  recipe: any,
-  ingredients: any[],
-  creatorName: string,
-  instructionSteps: string[]
-) {
-  if (!recipe) return null
-
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Recipe',
-    name: recipe.Name,
-    description: recipe.Notes || `Recipe for ${recipe.Name}`,
-    recipeCategory: recipe.Category || undefined,
-    image: recipe.Image_url ? [recipe.Image_url] : undefined,
-    author: creatorName
-      ? {
-          '@type': 'Person',
-          name: creatorName,
-        }
-      : undefined,
-    prepTime: recipe.Prep_time ? `PT${recipe.Prep_time}M` : undefined,
-    cookTime: recipe.Cook_time ? `PT${recipe.Cook_time}M` : undefined,
-    recipeIngredient:
-      ingredients.length > 0
-        ? ingredients.map((item) =>
-            [item.Amount, item.Unit, item.IngredientName].filter(Boolean).join(' ')
-          )
-        : undefined,
-    recipeInstructions:
-      instructionSteps.length > 0
-        ? instructionSteps.map((step) => ({
-            '@type': 'HowToStep',
-            text: step,
-          }))
-        : undefined,
-    keywords: recipe.Tags || undefined,
-  }
-}
 
 export default function RecipePageClient() {
   const params = useParams()
@@ -323,17 +283,8 @@ export default function RecipePageClient() {
     : []
 
   // Build structured data from the actual loaded recipe data
-const jsonLd = createRecipeJsonLd(recipe, ingredients, creatorName, instructionSteps)
   return (
     <div style={{ padding: 40, maxWidth: '1100px', margin: '0 auto' }}>
-      {jsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(jsonLd),
-          }}
-        />
-      )}
 
       <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
         <Link href="/">← Back to recipes</Link>

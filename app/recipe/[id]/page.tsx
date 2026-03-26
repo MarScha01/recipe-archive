@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import { createClient } from '@supabase/supabase-js'
 import RecipePageClient from './RecipePageClient'
 
@@ -14,6 +13,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+// Extract numeric ID from slug (e.g. "43-gypsy-sauce" → 43)
 function getRecipeIdFromParam(rawId: string) {
   const idPart = rawId.split('-')[0]
   const recipeId = Number(idPart)
@@ -25,6 +25,7 @@ function getRecipeIdFromParam(rawId: string) {
   return recipeId
 }
 
+// Fetch only PUBLIC recipe for SEO (important for Google)
 async function getRecipeForSeo(rawId: string) {
   const recipeId = getRecipeIdFromParam(rawId)
 
@@ -36,6 +37,7 @@ async function getRecipeForSeo(rawId: string) {
     .eq('id', recipeId)
     .maybeSingle()
 
+  // 🔒 Prevent indexing private recipes
   if (!recipe || recipe.is_public !== true) {
     return null
   }
@@ -43,6 +45,7 @@ async function getRecipeForSeo(rawId: string) {
   return recipe
 }
 
+// Build structured data (JSON-LD for Google)
 function createRecipeJsonLd(recipe: any) {
   if (!recipe) return null
 
@@ -74,6 +77,7 @@ function createRecipeJsonLd(recipe: any) {
   }
 }
 
+// Dynamic SEO metadata (title + description)
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
   const recipe = await getRecipeForSeo(id)
@@ -108,6 +112,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
+// Main page (Server Component)
 export default async function Page({ params }: PageProps) {
   const { id } = await params
   const recipe = await getRecipeForSeo(id)
@@ -115,17 +120,21 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <>
+      {/* 
+        ✅ Correct way to add structured data in App Router
+        - Plain <script>, NOT next/script
+        - This gets rendered in the HTML immediately (important for Google)
+      */}
       {jsonLd && (
-        <Script
-          id="recipe-jsonld"
+        <script
           type="application/ld+json"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(jsonLd),
           }}
         />
       )}
 
+      {/* Client component handles UI + interactions */}
       <RecipePageClient />
     </>
   )
