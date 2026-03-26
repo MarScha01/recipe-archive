@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import type { user } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 
 function isValidPassword(password: string) {
   const hasMinLength = password.length >= 8
