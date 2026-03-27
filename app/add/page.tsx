@@ -264,7 +264,7 @@ export default function AddRecipePage() {
         const cleanedName = ingredient.name.trim().replace(/\s+/g, '')
 
         const { data: existingIngredient, error: existingIngredientError } = await supabase
-          .from('ingredients')
+          .from('Ingredients')
           .select('id, Name')
           .ilike('Name', cleanedName)
           .maybeSingle()
