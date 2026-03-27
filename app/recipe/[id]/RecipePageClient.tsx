@@ -2,25 +2,42 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
 
-export default function RecipePageClient() {
-  const params = useParams()
+type Recipe = {
+  id: number
+  Name: string
+  Category: string | null
+  Prep_time: number | null
+  Cook_time: number | null
+  Image_url: string | null
+  Instructions: string | null
+  Notes: string | null
+  Tags: string | null
+  user_id: string | null
+  is_public: boolean | null
+}
 
-  // Route looks like: /recipe/12-spaghetti-bolognese
-  // We only need the numeric ID at the start
-  const rawId = Array.isArray(params.id) ? params.id[0] : params.id
-  const recipeId = Number(String(rawId).split('-')[0])
+type IngredientRow = {
+  Amount: string | null
+  Unit: string | null
+  IngredientName: string
+}
 
-  const [recipe, setRecipe] = useState<any>(null)
-  const [ingredients, setIngredients] = useState<any[]>([])
-  const [creatorName, setCreatorName] = useState('')
-  const [canEdit, setCanEdit] = useState(false)
-  const [canView, setCanView] = useState(false)
-  const [checkingAccess, setCheckingAccess] = useState(true)
-  const [errorMessage, setErrorMessage] = useState('')
+type Props = {
+  recipe: Recipe
+  ingredients: IngredientRow[]
+  creatorName: string
+  canEditInitial: boolean
+}
 
+export default function RecipePageClient({
+  recipe,
+  ingredients,
+  creatorName,
+  canEditInitial,
+}: Props) {
+  const [canEdit, setCanEdit] = useState(canEditInitial)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
 
@@ -28,30 +45,12 @@ export default function RecipePageClient() {
   const [newComment, setNewComment] = useState('')
   const [commentMessage, setCommentMessage] = useState('')
 
-  /**
-   * Load the recipe when the page opens or the recipe ID changes
-   */
   useEffect(() => {
-    if (recipeId) {
-      fetchRecipe()
-    }
-  }, [recipeId])
-
-  /**
-   * Save recently viewed recipe in localStorage
-   * This must be OUTSIDE fetchRecipe.
-   * It runs whenever `recipe` changes.
-   */
-  useEffect(() => {
-    if (!recipe) return
-
     const stored = localStorage.getItem('recentRecipes')
     let recent = stored ? JSON.parse(stored) : []
 
-    // Remove duplicate if this recipe is already in the list
     recent = recent.filter((item: any) => item.id !== recipe.id)
 
-    // Add current recipe to the start of the list
     recent.unshift({
       id: recipe.id,
       name: recipe.Name,
@@ -59,137 +58,45 @@ export default function RecipePageClient() {
       slug: `${recipe.id}-${recipe.Name.toLowerCase().replace(/\s+/g, '-')}`,
     })
 
-    // Keep only the 10 most recent recipes
     recent = recent.slice(0, 10)
 
     localStorage.setItem('recentRecipes', JSON.stringify(recent))
   }, [recipe])
 
-  async function fetchRecipe() {
-    setCheckingAccess(true)
-    setErrorMessage('')
+  useEffect(() => {
+    checkUser()
+    loadComments()
+  }, [recipe.id])
 
-    // Stop early if the URL does not contain a valid numeric recipe ID
-    if (!recipeId || Number.isNaN(recipeId)) {
-      setErrorMessage('Invalid recipe link.')
-      setCheckingAccess(false)
-      return
-    }
-
+  async function checkUser() {
     const { data: authData } = await supabase.auth.getUser()
-    const currentUser = authData.user
-    setCurrentUserId(currentUser?.id || null)
+    const user = authData.user
 
-    // Load the recipe by numeric ID
-    const { data: recipeData, error: recipeError } = await supabase
-      .from('Recipes')
-      .select('*')
-      .eq('id', recipeId)
-      .single()
+    setCurrentUserId(user?.id || null)
 
-    if (recipeError) {
-      setErrorMessage(`Recipe error: ${recipeError.message}`)
-      setCheckingAccess(false)
-      return
-    }
-
-    let admin = false
-    let owner = false
-
-    if (currentUser) {
-      owner = recipeData.user_id === currentUser.id
-
-      const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', currentUser.id)
-        .maybeSingle()
-
-      admin = currentProfile?.is_admin === true
-      setIsAdmin(admin)
-    } else {
+    if (!user) {
       setIsAdmin(false)
-    }
-
-    // Public recipes can be viewed by everyone
-    // Private recipes can only be viewed by owner or admin
-    const allowedToView = recipeData.is_public === true || owner || admin
-
-    if (!allowedToView) {
-      setCanView(false)
-      setCheckingAccess(false)
       return
     }
 
-    setCanView(true)
-    setCanEdit(owner || admin)
-    setRecipe(recipeData)
+    const isOwner = recipe.user_id === user.id
 
-    // Load creator display name / username
-    if (recipeData.user_id) {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('username, display_name')
-        .eq('id', recipeData.user_id)
-        .maybeSingle()
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle()
 
-      if (profileData) {
-        setCreatorName(profileData.display_name || profileData.username || '')
-      }
-    }
-
-    // Load ingredient rows linked to this recipe
-    const { data: ingredientsData, error: ingredientsError } = await supabase
-      .from('Recipe_ingredients')
-      .select('*')
-      .eq('Recipe_id', recipeId)
-
-    if (ingredientsError) {
-      setErrorMessage(`Ingredients error: ${ingredientsError.message}`)
-      setCheckingAccess(false)
-      return
-    }
-
-    if (!ingredientsData || ingredientsData.length === 0) {
-      setIngredients([])
-    } else {
-      const ingredientIds = ingredientsData.map((item) => item.Ingredient_id)
-
-      // Load actual ingredient names from Ingredients table
-      const { data: ingredientNames, error: namesError } = await supabase
-        .from('Ingredients')
-        .select('id, Name')
-        .in('id', ingredientIds)
-
-      if (namesError) {
-        setErrorMessage(`Ingredient names error: ${namesError.message}`)
-        setCheckingAccess(false)
-        return
-      }
-
-      const mergedIngredients = ingredientsData.map((item) => {
-        const matchingIngredient = ingredientNames?.find(
-          (ingredient) => String(ingredient.id) === String(item.Ingredient_id)
-        )
-
-        return {
-          ...item,
-          IngredientName: matchingIngredient ? matchingIngredient.Name : 'Unknown ingredient',
-        }
-      })
-
-      setIngredients(mergedIngredients)
-    }
-
-    await loadComments()
-    setCheckingAccess(false)
+    const admin = currentProfile?.is_admin === true
+    setIsAdmin(admin)
+    setCanEdit(isOwner || admin || canEditInitial)
   }
 
   async function loadComments() {
     const { data: commentRows, error } = await supabase
       .from('recipe_comments')
       .select('*')
-      .eq('recipe_id', recipeId)
+      .eq('recipe_id', recipe.id)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -246,7 +153,7 @@ export default function RecipePageClient() {
     }
 
     const { error } = await supabase.from('recipe_comments').insert({
-      recipe_id: recipeId,
+      recipe_id: recipe.id,
       user_id: user.id,
       content: trimmed,
     })
@@ -275,30 +182,6 @@ export default function RecipePageClient() {
     await loadComments()
   }
 
-  if (checkingAccess) {
-    return <div style={{ padding: 40 }}>Loading recipe...</div>
-  }
-
-  if (!canView) {
-    return (
-      <div style={{ padding: 40, maxWidth: '1100px', margin: '0 auto' }}>
-        <Link href="/" style={{ display: 'block', marginBottom: '20px' }}>
-          ← Back to recipes
-        </Link>
-        <p>This recipe is private.</p>
-      </div>
-    )
-  }
-
-  if (errorMessage) {
-    return <div style={{ padding: 40 }}>{errorMessage}</div>
-  }
-
-  if (!recipe) {
-    return <div style={{ padding: 40 }}>Loading recipe...</div>
-  }
-
-  // Turn instructions string into a clean list
   const instructionSteps = recipe.Instructions
     ? recipe.Instructions
         .split('\n')
@@ -306,7 +189,6 @@ export default function RecipePageClient() {
         .filter((step: string) => step.length > 0)
     : []
 
-  // Turn tag string into individual tags
   const tagList = recipe.Tags
     ? recipe.Tags.split(',')
         .map((tag: string) => tag.trim())
@@ -317,7 +199,6 @@ export default function RecipePageClient() {
     <div style={{ padding: 40, maxWidth: '1100px', margin: '0 auto' }}>
       <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
         <Link href="/">← Back to recipes</Link>
-
         {canEdit && <Link href={`/edit/${recipe.id}`}>Edit recipe</Link>}
       </div>
 
