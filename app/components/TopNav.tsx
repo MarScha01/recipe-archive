@@ -103,6 +103,7 @@ export default function TopNav() {
               <Link href="/">Recipes</Link>
               <Link href="/find">Find by ingredient</Link>
               <Link href="/add">Add recipe</Link>
+              <Link href="/meal-planner">Meal planner</Link>
             </div>
 
             <div
@@ -216,6 +217,9 @@ export default function TopNav() {
               </Link>
               <Link href="/add" onClick={closeMenu}>
                 Add recipe
+              </Link>
+              <Link href="/meal-planner" onClick={closeMenu}>
+                Meal planner
               </Link>
 
               <div
