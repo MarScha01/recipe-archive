@@ -2,8 +2,10 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 const CONSENT_KEY = 'recipe_archive_cookie_consent_v1'
+
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false)

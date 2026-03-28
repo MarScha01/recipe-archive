@@ -3,8 +3,13 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useLocale, useTranslations } from 'next-intl'
+import LocaleSwitcher from './LocaleSwitcher'
 
 export default function TopNav() {
+  const t = useTranslations()
+  const locale = useLocale()
+
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [displayName, setDisplayName] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -34,9 +39,14 @@ export default function TopNav() {
       if (!mounted) return
 
       if (profile) {
-        setDisplayName(profile.display_name || profile.username || user.email || 'Profile')
+        setDisplayName(
+          profile.display_name ||
+          profile.username ||
+          user.email ||
+          t('nav.profile')
+        )
       } else {
-        setDisplayName(user.email || 'Profile')
+        setDisplayName(user.email || t('nav.profile'))
       }
     }
 
@@ -52,11 +62,11 @@ export default function TopNav() {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [t])
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    window.location.href = '/'
+    window.location.href = `/${locale}`
   }
 
   function closeMenu() {
@@ -81,7 +91,6 @@ export default function TopNav() {
           margin: '0 auto'
         }}
       >
-        {/* Desktop nav */}
         <div className="desktop-nav">
           <div
             style={{
@@ -100,10 +109,10 @@ export default function TopNav() {
                 flexWrap: 'wrap'
               }}
             >
-              <Link href="/">Recipes</Link>
-              <Link href="/find">Find by ingredient</Link>
-              <Link href="/add">Add recipe</Link>
-              <Link href="/meal-planner">Meal planner</Link>
+              <Link href={`/${locale}`}>{t('nav.recipes')}</Link>
+              <Link href={`/${locale}/find`}>{t('nav.findByIngredient')}</Link>
+              <Link href={`/${locale}/add`}>{t('nav.addRecipe')}</Link>
+              <Link href={`/${locale}/meal-planner`}>{t('nav.mealPlanner')}</Link>
             </div>
 
             <div
@@ -114,10 +123,12 @@ export default function TopNav() {
                 flexWrap: 'wrap'
               }}
             >
+              <LocaleSwitcher />
+
               {currentUser ? (
                 <>
                   <Link
-                    href="/profile"
+                    href={`/${locale}/profile`}
                     style={{
                       padding: '8px 14px',
                       borderRadius: '8px',
@@ -141,20 +152,19 @@ export default function TopNav() {
                       cursor: 'pointer'
                     }}
                   >
-                    Logout
+                    {t('nav.logout')}
                   </button>
                 </>
               ) : (
                 <>
-                  <Link href="/login">Login</Link>
-                  <Link href="/signup">Sign up</Link>
+                  <Link href={`/${locale}/login`}>{t('nav.login')}</Link>
+                  <Link href={`/${locale}/signup`}>{t('nav.signUp')}</Link>
                 </>
               )}
             </div>
           </div>
         </div>
 
-        {/* Mobile nav */}
         <div className="mobile-nav">
           <div
             style={{
@@ -165,7 +175,7 @@ export default function TopNav() {
             }}
           >
             <Link
-              href="/"
+              href={`/${locale}`}
               onClick={closeMenu}
               style={{
                 color: 'white',
@@ -174,12 +184,12 @@ export default function TopNav() {
                 fontWeight: 700
               }}
             >
-              Recipes
+              {t('nav.recipes')}
             </Link>
 
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Open menu"
+              aria-label={t('nav.openMenu')}
               style={{
                 background: '#1a1a1a',
                 border: '1px solid #333',
@@ -206,20 +216,24 @@ export default function TopNav() {
                 borderTop: '1px solid #333'
               }}
             >
-              <Link href="/" onClick={closeMenu}>
-                Recipes
+              <div style={{ marginBottom: '4px' }}>
+                <LocaleSwitcher onSelect={closeMenu} />
+              </div>
+
+              <Link href={`/${locale}`} onClick={closeMenu}>
+                {t('nav.recipes')}
               </Link>
-              <Link href="/?favorites=1" onClick={closeMenu}>
-                Favorite recipes
+              <Link href={`/${locale}?favorites=1`} onClick={closeMenu}>
+                {t('nav.favoriteRecipes')}
               </Link>
-              <Link href="/find" onClick={closeMenu}>
-                Find by ingredient
+              <Link href={`/${locale}/find`} onClick={closeMenu}>
+                {t('nav.findByIngredient')}
               </Link>
-              <Link href="/add" onClick={closeMenu}>
-                Add recipe
+              <Link href={`/${locale}/add`} onClick={closeMenu}>
+                {t('nav.addRecipe')}
               </Link>
-              <Link href="/meal-planner" onClick={closeMenu}>
-                Meal planner
+              <Link href={`/${locale}/meal-planner`} onClick={closeMenu}>
+                {t('nav.mealPlanner')}
               </Link>
 
               <div
@@ -232,12 +246,12 @@ export default function TopNav() {
 
               {currentUser ? (
                 <>
-                  <Link href="/profile" onClick={closeMenu}>
-                    {displayName || 'Profile'}
+                  <Link href={`/${locale}/profile`} onClick={closeMenu}>
+                    {displayName || t('nav.profile')}
                   </Link>
-                  
-                  <Link href="/account" onClick={() => setMenuOpen(false)}>
-                    Account settings
+
+                  <Link href={`/${locale}/account`} onClick={closeMenu}>
+                    {t('nav.accountSettings')}
                   </Link>
 
                   <button
@@ -252,16 +266,16 @@ export default function TopNav() {
                       textAlign: 'left'
                     }}
                   >
-                    Logout
+                    {t('nav.logout')}
                   </button>
                 </>
               ) : (
                 <>
-                  <Link href="/login" onClick={closeMenu}>
-                    Login
+                  <Link href={`/${locale}/login`} onClick={closeMenu}>
+                    {t('nav.login')}
                   </Link>
-                  <Link href="/signup" onClick={closeMenu}>
-                    Sign up
+                  <Link href={`/${locale}/signup`} onClick={closeMenu}>
+                    {t('nav.signUp')}
                   </Link>
                 </>
               )}

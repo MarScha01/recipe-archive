@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 export default function RecentlyViewed() {
   const [recipes, setRecipes] = useState<any[]>([])
+  const t = useTranslations()
 
   useEffect(() => {
     const stored = localStorage.getItem('recentRecipes')
@@ -17,7 +19,7 @@ export default function RecentlyViewed() {
 
   return (
     <div style={{ marginTop: '40px' }}>
-      <h2 style={{ marginBottom: '16px' }}>Recently viewed</h2>
+      <h2 style={{ marginBottom: '16px' }}>{t('recentlyViewed.title')}</h2>
 
       <div style={{ display: 'flex', gap: '12px', overflowX: 'auto' }}>
         {recipes.map((recipe) => (
