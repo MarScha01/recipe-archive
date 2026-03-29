@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
-import TopNav from "./components/TopNav";
 import CookieBanner from "./components/CookieBanner";
 import Footer from "./components/Footer";
 import AnalyticsLoader from './components/AnalyticsLoader';
-import AuthListener from './components/AuthListener'
-import { Analytics } from "@vercel/analytics/next"
+import AuthListener from './components/AuthListener';
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://my-recipe-archives.vercel.app'),
@@ -28,12 +27,21 @@ export const metadata: Metadata = {
     url: 'https://my-recipe-archives.vercel.app/en',
     siteName: 'Recipe Archive',
     type: 'website',
+    images: [
+      {
+        url: 'https://my-recipe-archives.vercel.app/opengraph-image.png',
+        width: 1536,
+        height: 1024,
+        alt: 'Recipe Archive preview'
+      }
+    ]
   },
 
   twitter: {
     card: 'summary_large_image',
     title: 'Recipe Archive',
     description: 'Save, organize, and share your recipes.',
+    images: ['https://my-recipe-archives.vercel.app/opengraph-image.png']
   }
 };
 

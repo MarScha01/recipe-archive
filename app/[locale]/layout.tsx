@@ -3,8 +3,8 @@ import {getLocale, getMessages} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {hasLocale} from 'next-intl';
 import {routing} from '@/i18n/routing';
-import TopNav from '../components/TopNav'
-import Footer from '../components/Footer'
+import TopNav from '../components/TopNav';
+import Footer from '../components/Footer';
 
 export default async function LocaleLayout({
   children,
