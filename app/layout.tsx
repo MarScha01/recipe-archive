@@ -35,6 +35,7 @@ export default function RootLayout({
         <AnalyticsLoader />
         {children}
         <CookieBanner />
+        <Analytics />
       </body>
     </html>
   );
