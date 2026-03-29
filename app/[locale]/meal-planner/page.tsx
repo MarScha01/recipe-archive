@@ -126,6 +126,12 @@ export default function MealPlannerPage() {
   const [message, setMessage] = useState('')
   const [windowWidth, setWindowWidth] = useState(1200)
   const [openRecipePickerDay, setOpenRecipePickerDay] = useState<DayName | null>(null)
+  const [manualEntryDay, setManualEntryDay] = useState<DayName | null>(null)
+  const [manualEntryText, setManualEntryText] = useState('')
+  const [noteEntryDay, setNoteEntryDay] = useState<DayName | null>(null)
+  const [noteEntryText, setNoteEntryText] = useState('')
+  const [confirmDeleteEntryId, setConfirmDeleteEntryId] = useState<number | null>(null)
+  const [recipeSearchText, setRecipeSearchText] = useState('')
 
   const weekStart = useMemo(() => formatDateForDb(getMondayOfCurrentWeek()), [])
 
@@ -325,21 +331,21 @@ export default function MealPlannerPage() {
     return entries.filter((entry) => entry.day_name === dayName)
   }
 
-  async function addManualEntry(dayName: DayName) {
-    if (!mealPlan) return
+  async function saveManualEntry() {
+    if (!mealPlan || !manualEntryDay) return
 
-    const text = window.prompt(t('mealPlanner.prompts.enterMealText'))
-    if (!text || !text.trim()) return
+    const trimmed = manualEntryText.trim()
+    if (!trimmed) return
 
-    const position = getEntriesForDay(dayName).length
+    const position = getEntriesForDay(manualEntryDay).length
 
     const { error } = await supabase
       .from('meal_plan_entries')
       .insert({
         meal_plan_id: mealPlan.id,
-        day_name: dayName,
+        day_name: manualEntryDay,
         entry_type: 'manual',
-        text: text.trim(),
+        text: trimmed,
         position,
       })
 
@@ -348,25 +354,28 @@ export default function MealPlannerPage() {
       return
     }
 
+    setManualEntryText('')
+    setManualEntryDay(null)
+
     await refreshPlannerData(mealPlan.id)
   }
 
-  async function addNoteToDay(dayName: DayName) {
-    if (!mealPlan) return
+  async function saveNoteEntry() {
+    if (!mealPlan || !noteEntryDay) return
 
-    const note = window.prompt(t('mealPlanner.prompts.enterDayNote'))
-    if (!note || !note.trim()) return
+    const trimmed = noteEntryText.trim()
+    if (!trimmed) return
 
-    const position = getEntriesForDay(dayName).length
+    const position = getEntriesForDay(noteEntryDay).length
 
     const { error } = await supabase
       .from('meal_plan_entries')
       .insert({
         meal_plan_id: mealPlan.id,
-        day_name: dayName,
+        day_name: noteEntryDay,
         entry_type: 'manual',
         text: t('mealPlanner.noteLabel'),
-        note: note.trim(),
+        note: trimmed,
         position,
       })
 
@@ -374,6 +383,9 @@ export default function MealPlannerPage() {
       setMessage(`Add note error: ${error.message}`)
       return
     }
+
+    setNoteEntryText('')
+    setNoteEntryDay(null)
 
     await refreshPlannerData(mealPlan.id)
   }
@@ -406,14 +418,12 @@ export default function MealPlannerPage() {
     }
 
     setOpenRecipePickerDay(null)
+    setRecipeSearchText('')
     await refreshPlannerData(mealPlan.id)
   }
 
   async function deleteEntry(entryId: number) {
     if (!mealPlan) return
-
-    const confirmed = window.confirm(t('mealPlanner.confirmDeleteEntry'))
-    if (!confirmed) return
 
     const { error } = await supabase
       .from('meal_plan_entries')
@@ -425,6 +435,7 @@ export default function MealPlannerPage() {
       return
     }
 
+    setConfirmDeleteEntryId(null)
     await refreshPlannerData(mealPlan.id)
   }
 
@@ -619,6 +630,10 @@ export default function MealPlannerPage() {
 
   const isMobile = windowWidth < 760
 
+  const filteredRecipes = recipes.filter((recipe) =>
+    recipe.Name.toLowerCase().includes(recipeSearchText.toLowerCase())
+  )
+
   const sortedShoppingList = [...shoppingList].sort((a, b) => {
     return Number(a.is_checked) - Number(b.is_checked)
   })
@@ -719,21 +734,28 @@ export default function MealPlannerPage() {
                     style={{
                       display: 'flex',
                       flexWrap: 'wrap',
-                      gap: '10px',
+                      gap: '8px',
                     }}
                   >
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
                         setOpenRecipePickerDay((prev) => (prev === dayName ? null : dayName))
-                      }
+                        setRecipeSearchText('')
+                        setManualEntryDay(null)
+                        setManualEntryText('')
+                        setNoteEntryDay(null)
+                        setNoteEntryText('')
+                      }}
                       style={{
-                        padding: '10px 14px',
-                        borderRadius: '10px',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
                         border: '1px solid #333',
                         background: '#111',
                         color: 'white',
                         cursor: 'pointer',
+                        fontSize: '14px',
+                        lineHeight: 1.2,
                       }}
                     >
                       {t('mealPlanner.addRecipe')}
@@ -741,14 +763,23 @@ export default function MealPlannerPage() {
 
                     <button
                       type="button"
-                      onClick={() => addManualEntry(dayName)}
+                      onClick={() => {
+                        setManualEntryDay((prev) => (prev === dayName ? null : dayName))
+                        setOpenRecipePickerDay(null)
+                        setRecipeSearchText('')
+                        setManualEntryText('')
+                        setNoteEntryDay(null)
+                        setNoteEntryText('')
+                      }}
                       style={{
-                        padding: '10px 14px',
-                        borderRadius: '10px',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
                         border: '1px solid #333',
                         background: '#111',
                         color: 'white',
                         cursor: 'pointer',
+                        fontSize: '14px',
+                        lineHeight: 1.2,
                       }}
                     >
                       {t('mealPlanner.addMealText')}
@@ -756,14 +787,23 @@ export default function MealPlannerPage() {
 
                     <button
                       type="button"
-                      onClick={() => addNoteToDay(dayName)}
+                      onClick={() => {
+                        setNoteEntryDay((prev) => (prev === dayName ? null : dayName))
+                        setOpenRecipePickerDay(null)
+                        setRecipeSearchText('')
+                        setManualEntryDay(null)
+                        setManualEntryText('')
+                        setNoteEntryText('')
+                      }}
                       style={{
-                        padding: '10px 14px',
-                        borderRadius: '10px',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
                         border: '1px solid #333',
                         background: '#111',
                         color: 'white',
                         cursor: 'pointer',
+                        fontSize: '14px',
+                        lineHeight: 1.2,
                       }}
                     >
                       {t('mealPlanner.addNote')}
@@ -777,35 +817,191 @@ export default function MealPlannerPage() {
                           border: '1px solid #333',
                           borderRadius: '10px',
                           background: '#111',
-                          maxHeight: '240px',
-                          overflowY: 'auto',
+                          padding: '12px',
                         }}
                       >
-                        {recipes.length === 0 ? (
-                          <p style={{ padding: '14px', margin: 0, color: '#aaa' }}>
-                            {t('mealPlanner.noRecipesAvailable')}
-                          </p>
-                        ) : (
-                          recipes.map((recipe) => (
-                            <button
-                              key={recipe.id}
-                              type="button"
-                              onClick={() => addRecipeEntry(dayName, recipe.id)}
-                              style={{
-                                width: '100%',
-                                textAlign: 'left',
-                                padding: '12px 14px',
-                                border: 'none',
-                                borderBottom: '1px solid #222',
-                                background: 'transparent',
-                                color: 'white',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              {recipe.Name}
-                            </button>
-                          ))
-                        )}
+                        <input
+                          value={recipeSearchText}
+                          onChange={(e) => setRecipeSearchText(e.target.value)}
+                          placeholder="Search recipes..."
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            border: '1px solid #333',
+                            background: '#0d0d0d',
+                            color: 'white',
+                            marginBottom: '10px',
+                          }}
+                        />
+
+                        <div
+                          style={{
+                            maxHeight: '220px',
+                            overflowY: 'auto',
+                            border: filteredRecipes.length > 0 ? '1px solid #222' : 'none',
+                            borderRadius: '8px',
+                          }}
+                        >
+                          {recipes.length === 0 ? (
+                            <p style={{ padding: '14px', margin: 0, color: '#aaa' }}>
+                              {t('mealPlanner.noRecipesAvailable')}
+                            </p>
+                          ) : filteredRecipes.length === 0 ? (
+                            <p style={{ padding: '14px', margin: 0, color: '#aaa' }}>
+                              No matching recipes found.
+                            </p>
+                          ) : (
+                            filteredRecipes.map((recipe) => (
+                              <button
+                                key={recipe.id}
+                                type="button"
+                                onClick={() => addRecipeEntry(dayName, recipe.id)}
+                                style={{
+                                  width: '100%',
+                                  textAlign: 'left',
+                                  padding: '10px 12px',
+                                  border: 'none',
+                                  borderBottom: '1px solid #222',
+                                  background: 'transparent',
+                                  color: 'white',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                }}
+                              >
+                                {recipe.Name}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {manualEntryDay === dayName && (
+                      <div
+                        style={{
+                          width: '100%',
+                          marginTop: '14px',
+                          border: '1px solid #333',
+                          borderRadius: '10px',
+                          background: '#111',
+                          padding: '12px',
+                          display: 'flex',
+                          gap: '8px',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <input
+                          value={manualEntryText}
+                          onChange={(e) => setManualEntryText(e.target.value)}
+                          placeholder="Leftovers, takeout, sandwiches..."
+                          style={{
+                            flex: 1,
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            border: '1px solid #333',
+                            background: '#0d0d0d',
+                            color: 'white',
+                            minWidth: '120px',
+                          }}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={saveManualEntry}
+                          style={{
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #333',
+                            background: '#1a1a1a',
+                            color: 'white',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Add
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setManualEntryDay(null)
+                            setManualEntryText('')
+                          }}
+                          style={{
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #333',
+                            background: '#0d0d0d',
+                            color: 'white',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+
+                    {noteEntryDay === dayName && (
+                      <div
+                        style={{
+                          width: '100%',
+                          marginTop: '14px',
+                          border: '1px solid #333',
+                          borderRadius: '10px',
+                          background: '#111',
+                          padding: '12px',
+                          display: 'flex',
+                          gap: '8px',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <input
+                          value={noteEntryText}
+                          onChange={(e) => setNoteEntryText(e.target.value)}
+                          placeholder="Prep ahead, defrost meat, use leftovers..."
+                          style={{
+                            flex: 1,
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            border: '1px solid #333',
+                            background: '#0d0d0d',
+                            color: 'white',
+                            minWidth: '120px',
+                          }}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={saveNoteEntry}
+                          style={{
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #333',
+                            background: '#1a1a1a',
+                            color: 'white',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Add
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNoteEntryDay(null)
+                            setNoteEntryText('')
+                          }}
+                          style={{
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #333',
+                            background: '#0d0d0d',
+                            color: 'white',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Cancel
+                        </button>
                       </div>
                     )}
                   </div>
@@ -906,21 +1102,63 @@ export default function MealPlannerPage() {
                           )}
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => deleteEntry(entry.id)}
-                          style={{
-                            padding: '8px 12px',
-                            borderRadius: '8px',
-                            border: '1px solid #333',
-                            background: '#111',
-                            color: 'white',
-                            cursor: 'pointer',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {t('mealPlanner.delete')}
-                        </button>
+                        {confirmDeleteEntryId === entry.id ? (
+                          <div
+                            style={{
+                              display: 'flex',
+                              gap: '8px',
+                              flexShrink: 0,
+                              flexWrap: 'wrap',
+                              justifyContent: 'flex-end',
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => deleteEntry(entry.id)}
+                              style={{
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid #663333',
+                                background: '#2a1111',
+                                color: 'white',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Confirm delete
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteEntryId(null)}
+                              style={{
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid #333',
+                                background: '#111',
+                                color: 'white',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteEntryId(entry.id)}
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid #333',
+                              background: '#111',
+                              color: 'white',
+                              cursor: 'pointer',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {t('mealPlanner.delete')}
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
