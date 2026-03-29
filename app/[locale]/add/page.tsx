@@ -30,6 +30,7 @@ export default function AddRecipePage() {
   const [notes, setNotes] = useState('')
   const [tags, setTags] = useState('')
   const [imageUrl, setImageUrl] = useState('')
+  const [isPublic, setIsPublic] = useState(true)
   const [ingredients, setIngredients] = useState<
     { name: string; ingredient_id: string; amount: string; unit: string }[]
   >([{ name: '', ingredient_id: '', amount: '', unit: '' }])
@@ -246,7 +247,7 @@ export default function AddRecipePage() {
           Tags: normalizedTags,
           Image_url: imageUrl,
           user_id: user.id,
-          is_public: true,
+          is_public: isPublic,
           updated_at: new Date().toISOString()
         }
       ])
@@ -264,21 +265,20 @@ export default function AddRecipePage() {
       let ingredientId = Number(ingredient.ingredient_id)
 
       if (!ingredientId) {
-        const cleanedName = ingredient.name.trim().replace(/\s+/g, '')
+        const cleanedName = ingredient.name.trim()
 
-        const { data: existingIngredient, error: existingIngredientError } = await supabase
+        const { data: existingIngredients, error: existingIngredientError } = await supabase
           .from('Ingredients')
           .select('id, Name')
           .ilike('Name', cleanedName)
-          .maybeSingle()
 
         if (existingIngredientError) {
           setMessage(`Ingredient lookup error: ${existingIngredientError.message}`)
           return
         }
 
-        if (existingIngredient) {
-          ingredientId = existingIngredient.id
+        if (existingIngredients && existingIngredients.length > 0) {
+          ingredientId = existingIngredients[0].id
         } else {
           const { data: newIngredient, error: newIngredientError } = await supabase
             .from('Ingredients')
@@ -314,236 +314,496 @@ export default function AddRecipePage() {
   }
 
   return (
-    <div style={{ padding: 40, maxWidth: '900px', margin: '0 auto' }}>
-      <Link href={`/${locale}`} style={{ display: 'block', marginBottom: '20px' }}>
+    <div
+      style={{
+        padding: '40px 24px 60px',
+        maxWidth: '980px',
+        margin: '0 auto'
+      }}
+    >
+      <Link
+        href={`/${locale}`}
+        style={{
+          display: 'inline-block',
+          marginBottom: '22px',
+          color: 'white',
+          textDecoration: 'none',
+          fontSize: '18px'
+        }}
+      >
         ← {t('add.backToRecipes')}
       </Link>
 
-      <h1>{t('add.title')}</h1>
-
-      <input
-        placeholder={t('add.recipeName')}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        style={{ display: 'block', marginBottom: 10, padding: 10, width: '100%' }}
-      />
-
-      <select
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-        style={{ display: 'block', marginBottom: 10, padding: 10, width: '100%' }}
+      <div
+        style={{
+          borderTop: '1px solid #222',
+          paddingTop: '24px'
+        }}
       >
-        {categories.map((item) => (
-          <option key={item.value} value={item.value}>
-            {item.label}
-          </option>
-        ))}
-      </select>
+        <h1
+          style={{
+            fontSize: '52px',
+            lineHeight: 1.05,
+            margin: '0 0 22px',
+            fontWeight: 800
+          }}
+        >
+          {t('add.title')}
+        </h1>
 
-      <input
-        placeholder={t('add.prepTime')}
-        value={prepTime}
-        onChange={(e) => setPrepTime(e.target.value)}
-        style={{ display: 'block', marginBottom: 10, padding: 10, width: '100%' }}
-      />
+        <div style={{ display: 'grid', gap: '14px', marginBottom: '18px' }}>
+          <input
+            placeholder={t('add.recipeName')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            style={{
+              display: 'block',
+              padding: '14px 16px',
+              width: '100%',
+              borderRadius: '8px',
+              border: '1px solid #2f2f2f',
+              background: '#111',
+              color: 'white',
+              fontSize: '16px'
+            }}
+          />
+        </div>
 
-      <input
-        placeholder={t('add.cookTime')}
-        value={cookTime}
-        onChange={(e) => setCookTime(e.target.value)}
-        style={{ display: 'block', marginBottom: 10, padding: 10, width: '100%' }}
-      />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr)',
+            gap: '14px',
+            marginBottom: '20px',
+            borderBottom: '1px solid #222',
+            paddingBottom: '20px'
+          }}
+        >
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            style={{
+              display: 'block',
+              padding: '14px 16px',
+              width: '100%',
+              borderRadius: '8px',
+              border: '1px solid #2f2f2f',
+              background: '#111',
+              color: 'white',
+              fontSize: '16px'
+            }}
+          >
+            {categories.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
 
-      <input
-        placeholder={t('add.tags')}
-        value={tags}
-        onChange={(e) => setTags(e.target.value)}
-        style={{ display: 'block', marginBottom: 10, padding: 10, width: '100%' }}
-      />
-
-      <div style={{ marginBottom: 14 }}>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => uploadImage(e.target.files?.[0])}
-          style={{ marginBottom: 10 }}
-        />
-
-        {uploading && <p>{t('add.uploadingImage')}</p>}
-
-        {imageUrl && (
-          <div style={{ marginTop: 10 }}>
-            <img
-              src={imageUrl}
-              alt={t('add.recipePreview')}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gap: '14px'
+            }}
+          >
+            <input
+              placeholder={t('add.prepTime')}
+              value={prepTime}
+              onChange={(e) => setPrepTime(e.target.value)}
               style={{
-                width: '160px',
-                borderRadius: '8px'
+                display: 'block',
+                padding: '14px 16px',
+                width: '100%',
+                borderRadius: '8px',
+                border: '1px solid #2f2f2f',
+                background: '#111',
+                color: 'white',
+                fontSize: '16px'
               }}
             />
 
+            <input
+              placeholder={t('add.cookTime')}
+              value={cookTime}
+              onChange={(e) => setCookTime(e.target.value)}
+              style={{
+                display: 'block',
+                padding: '14px 16px',
+                width: '100%',
+                borderRadius: '8px',
+                border: '1px solid #2f2f2f',
+                background: '#111',
+                color: 'white',
+                fontSize: '16px'
+              }}
+            />
+          </div>
+
+          <input
+            placeholder={t('add.tags')}
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            style={{
+              display: 'block',
+              padding: '14px 16px',
+              width: '100%',
+              borderRadius: '8px',
+              border: '1px solid #2f2f2f',
+              background: '#111',
+              color: 'white',
+              fontSize: '16px'
+            }}
+          />
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}
+          >
+            <span style={{ fontSize: '15px', color: '#d3d3d3' }}>
+              Visibility
+            </span>
+
             <button
               type="button"
-              onClick={() => setImageUrl('')}
+              onClick={() => setIsPublic(true)}
               style={{
-                marginLeft: 10,
-                padding: '6px 10px',
+                padding: '9px 14px',
+                borderRadius: '8px',
+                border: isPublic ? '1px solid #3f7f5a' : '1px solid #333',
+                background: isPublic ? '#234131' : '#111',
+                color: 'white',
                 cursor: 'pointer'
               }}
             >
-              {t('add.removeImage')}
+              Public
             </button>
-          </div>
-        )}
-      </div>
 
-      <textarea
-        placeholder={t('add.instructions')}
-        value={instructions}
-        onChange={(e) => setInstructions(e.target.value)}
-        style={{ display: 'block', marginBottom: 10, padding: 10, width: '100%', height: 120 }}
-      />
-
-      <textarea
-        placeholder={t('add.notes')}
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        style={{ display: 'block', marginBottom: 20, padding: 10, width: '100%', height: 80 }}
-      />
-
-      <h2>{t('add.ingredients')}</h2>
-
-      {ingredients.map((ingredient, index) => {
-        const suggestions = getSuggestions(ingredient.name)
-        const showSuggestions =
-          activeSuggestionIndex === index &&
-          ingredient.name.trim() !== '' &&
-          suggestions.length > 0 &&
-          !suggestions.some(
-            (item) => item.Name.toLowerCase() === ingredient.name.trim().toLowerCase()
-          )
-
-        return (
-          <div key={index} style={{ marginBottom: '14px' }}>
-            <div
+            <button
+              type="button"
+              onClick={() => setIsPublic(false)}
               style={{
-                display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1fr auto',
-                gap: '10px',
-                alignItems: 'center'
+                padding: '9px 14px',
+                borderRadius: '8px',
+                border: !isPublic ? '1px solid #666' : '1px solid #333',
+                background: !isPublic ? '#222' : '#111',
+                color: 'white',
+                cursor: 'pointer'
               }}
             >
-              <div style={{ position: 'relative' }}>
-                <input
-                  placeholder={t('add.ingredientName')}
-                  value={ingredient.name}
-                  onFocus={() => setActiveSuggestionIndex(index)}
-                  onChange={(e) => {
-                    setActiveSuggestionIndex(index)
-                    updateIngredient(index, 'name', e.target.value)
-                    updateIngredient(index, 'ingredient_id', '')
-                  }}
-                  onBlur={() => {
-                    setTimeout(() => {
-                      setActiveSuggestionIndex((current) => (current === index ? null : current))
-                    }, 150)
-                  }}
-                  style={{ padding: 10, width: '100%' }}
-                />
+              Private
+            </button>
+          </div>
 
-                {showSuggestions && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      right: 0,
-                      background: '#000',
-                      border: '1px solid #444',
-                      borderRadius: '8px',
-                      marginTop: '4px',
-                      zIndex: 10,
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                    }}
-                  >
-                    {suggestions.map((suggestion) => (
-                      <button
-                        key={suggestion.id}
-                        type="button"
-                        onClick={() => selectSuggestion(index, suggestion)}
-                        style={{
-                          display: 'block',
-                          width: '100%',
-                          textAlign: 'left',
-                          padding: '10px 12px',
-                          border: 'none',
-                          background: '#000',
-                          color: '#fff',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {suggestion.Name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+          <div style={{ marginTop: '4px' }}>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => uploadImage(e.target.files?.[0])}
+              style={{ marginBottom: '10px' }}
+            />
 
-              <input
-                placeholder={t('add.amount')}
-                value={ingredient.amount}
-                onFocus={() => setActiveSuggestionIndex(null)}
-                onChange={(e) => updateIngredient(index, 'amount', e.target.value)}
-                style={{ padding: 10, width: '100%' }}
-              />
+            {uploading && <p style={{ margin: '8px 0 0' }}>{t('add.uploadingImage')}</p>}
 
-              <input
-                placeholder={t('add.unit')}
-                value={ingredient.unit}
-                onFocus={() => setActiveSuggestionIndex(null)}
-                onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
-                style={{ padding: 10, width: '100%' }}
-              />
-
-              <button
-                type="button"
-                onClick={() => removeIngredientRow(index)}
+            {imageUrl && (
+              <div
                 style={{
-                  padding: '10px 14px',
-                  borderRadius: 8,
-                  cursor: 'pointer'
+                  marginTop: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  flexWrap: 'wrap'
                 }}
               >
-                {t('add.removeIngredient')}
-              </button>
-            </div>
+                <img
+                  src={imageUrl}
+                  alt={t('add.recipePreview')}
+                  style={{
+                    width: '170px',
+                    height: '120px',
+                    objectFit: 'cover',
+                    borderRadius: '10px',
+                    border: '1px solid #333'
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setImageUrl('')}
+                  style={{
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #333',
+                    background: '#111',
+                    color: 'white',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {t('add.removeImage')}
+                </button>
+              </div>
+            )}
           </div>
-        )
-      })}
 
-      <button
-        type="button"
-        onClick={addIngredientRow}
-        style={{
-          padding: '10px 16px',
-          borderRadius: 8,
-          cursor: 'pointer',
-          marginBottom: '20px'
-        }}
-      >
-        {t('add.addIngredient')}
-      </button>
+          <textarea
+            placeholder={t('add.instructions')}
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            style={{
+              display: 'block',
+              padding: '14px 16px',
+              width: '100%',
+              minHeight: '140px',
+              borderRadius: '8px',
+              border: '1px solid #2f2f2f',
+              background: '#111',
+              color: 'white',
+              fontSize: '16px',
+              resize: 'vertical'
+            }}
+          />
 
-      <div>
-        <button
-          onClick={addRecipe}
-          style={{ padding: '10px 20px', borderRadius: 8, cursor: 'pointer' }}
+          <textarea
+            placeholder={t('add.notes')}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            style={{
+              display: 'block',
+              padding: '14px 16px',
+              width: '100%',
+              minHeight: '90px',
+              borderRadius: '8px',
+              border: '1px solid #2f2f2f',
+              background: '#111',
+              color: 'white',
+              fontSize: '16px',
+              resize: 'vertical'
+            }}
+          />
+        </div>
+
+        <h2
+          style={{
+            fontSize: '34px',
+            margin: '0 0 18px',
+            fontWeight: 700
+          }}
         >
-          {t('add.saveRecipe')}
-        </button>
-      </div>
+          {t('add.ingredients')}
+        </h2>
 
-      {message && <p style={{ marginTop: 15 }}>{message}</p>}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '120px 120px minmax(0, 1fr) 44px',
+            gap: '12px',
+            color: '#a8a8a8',
+            fontSize: '14px',
+            padding: '0 6px 12px',
+            borderBottom: '1px solid #222',
+            marginBottom: '16px'
+          }}
+        >
+          <div>{t('add.amount')}</div>
+          <div>{t('add.unit')}</div>
+          <div>{t('add.ingredientName')}</div>
+          <div style={{ textAlign: 'center' }}>×</div>
+        </div>
+
+        <div style={{ display: 'grid', gap: '14px' }}>
+          {ingredients.map((ingredient, index) => {
+            const suggestions = getSuggestions(ingredient.name)
+            const showSuggestions =
+              activeSuggestionIndex === index &&
+              ingredient.name.trim() !== '' &&
+              suggestions.length > 0 &&
+              !suggestions.some(
+                (item) => item.Name.toLowerCase() === ingredient.name.trim().toLowerCase()
+              )
+
+            return (
+              <div key={index}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '120px 120px minmax(0, 1fr) 44px',
+                    gap: '12px',
+                    alignItems: 'start'
+                  }}
+                >
+                  <input
+                    placeholder={t('add.amount')}
+                    value={ingredient.amount}
+                    onFocus={() => setActiveSuggestionIndex(null)}
+                    onChange={(e) => updateIngredient(index, 'amount', e.target.value)}
+                    style={{
+                      padding: '12px 14px',
+                      width: '100%',
+                      borderRadius: '8px',
+                      border: '1px solid #2f2f2f',
+                      background: '#111',
+                      color: 'white',
+                      fontSize: '15px'
+                    }}
+                  />
+
+                  <input
+                    placeholder={t('add.unit')}
+                    value={ingredient.unit}
+                    onFocus={() => setActiveSuggestionIndex(null)}
+                    onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
+                    style={{
+                      padding: '12px 14px',
+                      width: '100%',
+                      borderRadius: '8px',
+                      border: '1px solid #2f2f2f',
+                      background: '#111',
+                      color: 'white',
+                      fontSize: '15px'
+                    }}
+                  />
+
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      placeholder={t('add.ingredientName')}
+                      value={ingredient.name}
+                      onFocus={() => setActiveSuggestionIndex(index)}
+                      onChange={(e) => {
+                        setActiveSuggestionIndex(index)
+                        updateIngredient(index, 'name', e.target.value)
+                        updateIngredient(index, 'ingredient_id', '')
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => {
+                          setActiveSuggestionIndex((current) => (current === index ? null : current))
+                        }, 150)
+                      }}
+                      style={{
+                        padding: '12px 14px',
+                        width: '100%',
+                        borderRadius: '8px',
+                        border: '1px solid #2f2f2f',
+                        background: '#111',
+                        color: 'white',
+                        fontSize: '15px'
+                      }}
+                    />
+
+                    {showSuggestions && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          background: '#111',
+                          border: '1px solid #333',
+                          borderRadius: '10px',
+                          marginTop: '6px',
+                          zIndex: 10,
+                          boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {suggestions.map((suggestion) => (
+                          <button
+                            key={suggestion.id}
+                            type="button"
+                            onClick={() => selectSuggestion(index, suggestion)}
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              textAlign: 'left',
+                              padding: '11px 12px',
+                              border: 'none',
+                              borderBottom: '1px solid #222',
+                              background: '#111',
+                              color: '#fff',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {suggestion.Name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => removeIngredientRow(index)}
+                    style={{
+                      height: '46px',
+                      borderRadius: '8px',
+                      border: '1px solid #333',
+                      background: '#111',
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '22px',
+                      lineHeight: 1
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div
+          style={{
+            marginTop: '20px',
+            borderTop: '1px solid #222',
+            paddingTop: '20px'
+          }}
+        >
+          <button
+            type="button"
+            onClick={addIngredientRow}
+            style={{
+              padding: '10px 16px',
+              borderRadius: '8px',
+              border: '1px solid #333',
+              background: '#1a1f2a',
+              color: 'white',
+              cursor: 'pointer',
+              marginBottom: '22px',
+              fontSize: '15px'
+            }}
+          >
+            + {t('add.addIngredient')}
+          </button>
+
+          <div>
+            <button
+              onClick={addRecipe}
+              style={{
+                padding: '14px 24px',
+                borderRadius: '8px',
+                border: '1px solid #3f7f5a',
+                background: '#2d6a4f',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '17px',
+                fontWeight: 700
+              }}
+            >
+              {t('add.saveRecipe')}
+            </button>
+          </div>
+
+          {message && (
+            <p style={{ marginTop: '16px', color: '#ddd' }}>
+              {message}
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
