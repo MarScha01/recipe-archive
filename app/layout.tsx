@@ -8,13 +8,32 @@ import AnalyticsLoader from './components/AnalyticsLoader';
 import AuthListener from './components/AuthListener'
 import { Analytics } from "@vercel/analytics/next"
 
-export const metadata = {
+export const metadata: Metadata = {
+  metadataBase: new URL('https://my-recipe-archives.vercel.app'),
+
   title: {
     default: 'Recipe Archive - Save, organize, and discover recipes',
-    template: '%s - Recipe Archive' },
+    template: '%s - Recipe Archive'
+  },
+
   description: 'Store your recipes, find meals by ingredient, and organize your cooking in one place.',
+
   verification: {
     google: 'DpKa9AGg1ACk-MQxi0hCP51381gkBBCGbaGgp6EJ7_8'
+  },
+
+  openGraph: {
+    title: 'Recipe Archive',
+    description: 'Save, organize, and share your recipes.',
+    url: 'https://my-recipe-archives.vercel.app/en',
+    siteName: 'Recipe Archive',
+    type: 'website',
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Recipe Archive',
+    description: 'Save, organize, and share your recipes.',
   }
 };
 
