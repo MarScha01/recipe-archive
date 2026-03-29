@@ -38,9 +38,21 @@ export default function AddRecipePage() {
   const [message, setMessage] = useState('')
   const [uploading, setUploading] = useState(false)
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState<number | null>(null)
+  const [windowWidth, setWindowWidth] = useState(1200)
+
+  const isMobile = windowWidth < 760
 
   useEffect(() => {
     loadIngredients()
+
+    function handleResize() {
+      setWindowWidth(window.innerWidth)
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   async function loadIngredients() {
@@ -316,7 +328,7 @@ export default function AddRecipePage() {
   return (
     <div
       style={{
-        padding: '40px 24px 60px',
+        padding: isMobile ? '24px 14px 50px' : '40px 24px 60px',
         maxWidth: '980px',
         margin: '0 auto'
       }}
@@ -325,10 +337,10 @@ export default function AddRecipePage() {
         href={`/${locale}`}
         style={{
           display: 'inline-block',
-          marginBottom: '22px',
+          marginBottom: isMobile ? '18px' : '22px',
           color: 'white',
           textDecoration: 'none',
-          fontSize: '18px'
+          fontSize: isMobile ? '16px' : '18px'
         }}
       >
         ← {t('add.backToRecipes')}
@@ -337,12 +349,12 @@ export default function AddRecipePage() {
       <div
         style={{
           borderTop: '1px solid #222',
-          paddingTop: '24px'
+          paddingTop: isMobile ? '18px' : '24px'
         }}
       >
         <h1
           style={{
-            fontSize: '52px',
+            fontSize: isMobile ? '40px' : '52px',
             lineHeight: 1.05,
             margin: '0 0 22px',
             fontWeight: 800
@@ -358,13 +370,13 @@ export default function AddRecipePage() {
             onChange={(e) => setName(e.target.value)}
             style={{
               display: 'block',
-              padding: '14px 16px',
+              padding: isMobile ? '13px 14px' : '14px 16px',
               width: '100%',
               borderRadius: '8px',
               border: '1px solid #2f2f2f',
               background: '#111',
               color: 'white',
-              fontSize: '16px'
+              fontSize: isMobile ? '15px' : '16px'
             }}
           />
         </div>
@@ -384,13 +396,13 @@ export default function AddRecipePage() {
             onChange={(e) => setCategory(e.target.value)}
             style={{
               display: 'block',
-              padding: '14px 16px',
+              padding: isMobile ? '13px 14px' : '14px 16px',
               width: '100%',
               borderRadius: '8px',
               border: '1px solid #2f2f2f',
               background: '#111',
               color: 'white',
-              fontSize: '16px'
+              fontSize: isMobile ? '15px' : '16px'
             }}
           >
             {categories.map((item) => (
@@ -403,7 +415,7 @@ export default function AddRecipePage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))',
               gap: '14px'
             }}
           >
@@ -413,13 +425,13 @@ export default function AddRecipePage() {
               onChange={(e) => setPrepTime(e.target.value)}
               style={{
                 display: 'block',
-                padding: '14px 16px',
+                padding: isMobile ? '13px 14px' : '14px 16px',
                 width: '100%',
                 borderRadius: '8px',
                 border: '1px solid #2f2f2f',
                 background: '#111',
                 color: 'white',
-                fontSize: '16px'
+                fontSize: isMobile ? '15px' : '16px'
               }}
             />
 
@@ -429,13 +441,13 @@ export default function AddRecipePage() {
               onChange={(e) => setCookTime(e.target.value)}
               style={{
                 display: 'block',
-                padding: '14px 16px',
+                padding: isMobile ? '13px 14px' : '14px 16px',
                 width: '100%',
                 borderRadius: '8px',
                 border: '1px solid #2f2f2f',
                 background: '#111',
                 color: 'white',
-                fontSize: '16px'
+                fontSize: isMobile ? '15px' : '16px'
               }}
             />
           </div>
@@ -446,57 +458,68 @@ export default function AddRecipePage() {
             onChange={(e) => setTags(e.target.value)}
             style={{
               display: 'block',
-              padding: '14px 16px',
+              padding: isMobile ? '13px 14px' : '14px 16px',
               width: '100%',
               borderRadius: '8px',
               border: '1px solid #2f2f2f',
               background: '#111',
               color: 'white',
-              fontSize: '16px'
+              fontSize: isMobile ? '15px' : '16px'
             }}
           />
 
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: isMobile ? 'stretch' : 'center',
               gap: '12px',
-              flexWrap: 'wrap'
+              flexWrap: 'wrap',
+              flexDirection: isMobile ? 'column' : 'row'
             }}
           >
             <span style={{ fontSize: '15px', color: '#d3d3d3' }}>
               Visibility
             </span>
 
-            <button
-              type="button"
-              onClick={() => setIsPublic(true)}
+            <div
               style={{
-                padding: '9px 14px',
-                borderRadius: '8px',
-                border: isPublic ? '1px solid #3f7f5a' : '1px solid #333',
-                background: isPublic ? '#234131' : '#111',
-                color: 'white',
-                cursor: 'pointer'
+                display: 'flex',
+                gap: '10px',
+                width: isMobile ? '100%' : 'auto'
               }}
             >
-              Public
-            </button>
+              <button
+                type="button"
+                onClick={() => setIsPublic(true)}
+                style={{
+                  padding: '9px 14px',
+                  borderRadius: '8px',
+                  border: isPublic ? '1px solid #3f7f5a' : '1px solid #333',
+                  background: isPublic ? '#234131' : '#111',
+                  color: 'white',
+                  cursor: 'pointer',
+                  flex: isMobile ? 1 : 'unset'
+                }}
+              >
+                Public
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setIsPublic(false)}
-              style={{
-                padding: '9px 14px',
-                borderRadius: '8px',
-                border: !isPublic ? '1px solid #666' : '1px solid #333',
-                background: !isPublic ? '#222' : '#111',
-                color: 'white',
-                cursor: 'pointer'
-              }}
-            >
-              Private
-            </button>
+              <button
+                type="button"
+                onClick={() => setIsPublic(false)}
+                style={{
+                  padding: '9px 14px',
+                  borderRadius: '8px',
+                  border: !isPublic ? '1px solid #666' : '1px solid #333',
+                  background: !isPublic ? '#222' : '#111',
+                  color: 'white',
+                  cursor: 'pointer',
+                  flex: isMobile ? 1 : 'unset'
+                }}
+              >
+                Private
+              </button>
+            </div>
           </div>
 
           <div style={{ marginTop: '4px' }}>
@@ -504,7 +527,7 @@ export default function AddRecipePage() {
               type="file"
               accept="image/*"
               onChange={(e) => uploadImage(e.target.files?.[0])}
-              style={{ marginBottom: '10px' }}
+              style={{ marginBottom: '10px', maxWidth: '100%' }}
             />
 
             {uploading && <p style={{ margin: '8px 0 0' }}>{t('add.uploadingImage')}</p>}
@@ -514,17 +537,19 @@ export default function AddRecipePage() {
                 style={{
                   marginTop: '10px',
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: isMobile ? 'stretch' : 'center',
                   gap: '12px',
-                  flexWrap: 'wrap'
+                  flexWrap: 'wrap',
+                  flexDirection: isMobile ? 'column' : 'row'
                 }}
               >
                 <img
                   src={imageUrl}
                   alt={t('add.recipePreview')}
                   style={{
-                    width: '170px',
-                    height: '120px',
+                    width: isMobile ? '100%' : '170px',
+                    maxWidth: isMobile ? '100%' : '170px',
+                    height: isMobile ? '200px' : '120px',
                     objectFit: 'cover',
                     borderRadius: '10px',
                     border: '1px solid #333'
@@ -540,7 +565,8 @@ export default function AddRecipePage() {
                     border: '1px solid #333',
                     background: '#111',
                     color: 'white',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    width: isMobile ? '100%' : 'auto'
                   }}
                 >
                   {t('add.removeImage')}
@@ -555,14 +581,14 @@ export default function AddRecipePage() {
             onChange={(e) => setInstructions(e.target.value)}
             style={{
               display: 'block',
-              padding: '14px 16px',
+              padding: isMobile ? '13px 14px' : '14px 16px',
               width: '100%',
-              minHeight: '140px',
+              minHeight: isMobile ? '130px' : '140px',
               borderRadius: '8px',
               border: '1px solid #2f2f2f',
               background: '#111',
               color: 'white',
-              fontSize: '16px',
+              fontSize: isMobile ? '15px' : '16px',
               resize: 'vertical'
             }}
           />
@@ -573,14 +599,14 @@ export default function AddRecipePage() {
             onChange={(e) => setNotes(e.target.value)}
             style={{
               display: 'block',
-              padding: '14px 16px',
+              padding: isMobile ? '13px 14px' : '14px 16px',
               width: '100%',
-              minHeight: '90px',
+              minHeight: isMobile ? '90px' : '90px',
               borderRadius: '8px',
               border: '1px solid #2f2f2f',
               background: '#111',
               color: 'white',
-              fontSize: '16px',
+              fontSize: isMobile ? '15px' : '16px',
               resize: 'vertical'
             }}
           />
@@ -588,7 +614,7 @@ export default function AddRecipePage() {
 
         <h2
           style={{
-            fontSize: '34px',
+            fontSize: isMobile ? '28px' : '34px',
             margin: '0 0 18px',
             fontWeight: 700
           }}
@@ -596,23 +622,25 @@ export default function AddRecipePage() {
           {t('add.ingredients')}
         </h2>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '120px 120px minmax(0, 1fr) 44px',
-            gap: '12px',
-            color: '#a8a8a8',
-            fontSize: '14px',
-            padding: '0 6px 12px',
-            borderBottom: '1px solid #222',
-            marginBottom: '16px'
-          }}
-        >
-          <div>{t('add.amount')}</div>
-          <div>{t('add.unit')}</div>
-          <div>{t('add.ingredientName')}</div>
-          <div style={{ textAlign: 'center' }}>×</div>
-        </div>
+        {!isMobile && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '120px 120px minmax(0, 1fr) 44px',
+              gap: '12px',
+              color: '#a8a8a8',
+              fontSize: '14px',
+              padding: '0 6px 12px',
+              borderBottom: '1px solid #222',
+              marginBottom: '16px'
+            }}
+          >
+            <div>{t('add.amount')}</div>
+            <div>{t('add.unit')}</div>
+            <div>{t('add.ingredientName')}</div>
+            <div style={{ textAlign: 'center' }}>×</div>
+          </div>
+        )}
 
         <div style={{ display: 'grid', gap: '14px' }}>
           {ingredients.map((ingredient, index) => {
@@ -627,61 +655,151 @@ export default function AddRecipePage() {
 
             return (
               <div key={index}>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '120px 120px minmax(0, 1fr) 44px',
-                    gap: '12px',
-                    alignItems: 'start'
-                  }}
-                >
-                  <input
-                    placeholder={t('add.amount')}
-                    value={ingredient.amount}
-                    onFocus={() => setActiveSuggestionIndex(null)}
-                    onChange={(e) => updateIngredient(index, 'amount', e.target.value)}
+                {isMobile ? (
+                  <div
                     style={{
-                      padding: '12px 14px',
-                      width: '100%',
-                      borderRadius: '8px',
-                      border: '1px solid #2f2f2f',
-                      background: '#111',
-                      color: 'white',
-                      fontSize: '15px'
+                      display: 'grid',
+                      gap: '8px'
                     }}
-                  />
+                  >
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '90px 90px 44px',
+                        gap: '8px',
+                        alignItems: 'start'
+                      }}
+                    >
+                      <input
+                        placeholder={t('add.amount')}
+                        value={ingredient.amount}
+                        onFocus={() => setActiveSuggestionIndex(null)}
+                        onChange={(e) => updateIngredient(index, 'amount', e.target.value)}
+                        style={{
+                          padding: '12px 12px',
+                          width: '100%',
+                          borderRadius: '8px',
+                          border: '1px solid #2f2f2f',
+                          background: '#111',
+                          color: 'white',
+                          fontSize: '15px'
+                        }}
+                      />
 
-                  <input
-                    placeholder={t('add.unit')}
-                    value={ingredient.unit}
-                    onFocus={() => setActiveSuggestionIndex(null)}
-                    onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
+                      <input
+                        placeholder={t('add.unit')}
+                        value={ingredient.unit}
+                        onFocus={() => setActiveSuggestionIndex(null)}
+                        onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
+                        style={{
+                          padding: '12px 12px',
+                          width: '100%',
+                          borderRadius: '8px',
+                          border: '1px solid #2f2f2f',
+                          background: '#111',
+                          color: 'white',
+                          fontSize: '15px'
+                        }}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => removeIngredientRow(index)}
+                        style={{
+                          height: '44px',
+                          borderRadius: '8px',
+                          border: '1px solid #333',
+                          background: '#111',
+                          color: 'white',
+                          cursor: 'pointer',
+                          fontSize: '22px',
+                          lineHeight: 1
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        placeholder={t('add.ingredientName')}
+                        value={ingredient.name}
+                        onFocus={() => setActiveSuggestionIndex(index)}
+                        onChange={(e) => {
+                          setActiveSuggestionIndex(index)
+                          updateIngredient(index, 'name', e.target.value)
+                          updateIngredient(index, 'ingredient_id', '')
+                        }}
+                        onBlur={() => {
+                          setTimeout(() => {
+                            setActiveSuggestionIndex((current) => (current === index ? null : current))
+                          }, 150)
+                        }}
+                        style={{
+                          padding: '12px 14px',
+                          width: '100%',
+                          borderRadius: '8px',
+                          border: '1px solid #2f2f2f',
+                          background: '#111',
+                          color: 'white',
+                          fontSize: '15px'
+                        }}
+                      />
+
+                      {showSuggestions && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            background: '#111',
+                            border: '1px solid #333',
+                            borderRadius: '10px',
+                            marginTop: '6px',
+                            zIndex: 10,
+                            boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {suggestions.map((suggestion) => (
+                            <button
+                              key={suggestion.id}
+                              type="button"
+                              onClick={() => selectSuggestion(index, suggestion)}
+                              style={{
+                                display: 'block',
+                                width: '100%',
+                                textAlign: 'left',
+                                padding: '11px 12px',
+                                border: 'none',
+                                borderBottom: '1px solid #222',
+                                background: '#111',
+                                color: '#fff',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {suggestion.Name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div
                     style={{
-                      padding: '12px 14px',
-                      width: '100%',
-                      borderRadius: '8px',
-                      border: '1px solid #2f2f2f',
-                      background: '#111',
-                      color: 'white',
-                      fontSize: '15px'
+                      display: 'grid',
+                      gridTemplateColumns: '120px 120px minmax(0, 1fr) 44px',
+                      gap: '12px',
+                      alignItems: 'start'
                     }}
-                  />
-
-                  <div style={{ position: 'relative' }}>
+                  >
                     <input
-                      placeholder={t('add.ingredientName')}
-                      value={ingredient.name}
-                      onFocus={() => setActiveSuggestionIndex(index)}
-                      onChange={(e) => {
-                        setActiveSuggestionIndex(index)
-                        updateIngredient(index, 'name', e.target.value)
-                        updateIngredient(index, 'ingredient_id', '')
-                      }}
-                      onBlur={() => {
-                        setTimeout(() => {
-                          setActiveSuggestionIndex((current) => (current === index ? null : current))
-                        }, 150)
-                      }}
+                      placeholder={t('add.amount')}
+                      value={ingredient.amount}
+                      onFocus={() => setActiveSuggestionIndex(null)}
+                      onChange={(e) => updateIngredient(index, 'amount', e.target.value)}
                       style={{
                         padding: '12px 14px',
                         width: '100%',
@@ -693,63 +811,106 @@ export default function AddRecipePage() {
                       }}
                     />
 
-                    {showSuggestions && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '100%',
-                          left: 0,
-                          right: 0,
-                          background: '#111',
-                          border: '1px solid #333',
-                          borderRadius: '10px',
-                          marginTop: '6px',
-                          zIndex: 10,
-                          boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {suggestions.map((suggestion) => (
-                          <button
-                            key={suggestion.id}
-                            type="button"
-                            onClick={() => selectSuggestion(index, suggestion)}
-                            style={{
-                              display: 'block',
-                              width: '100%',
-                              textAlign: 'left',
-                              padding: '11px 12px',
-                              border: 'none',
-                              borderBottom: '1px solid #222',
-                              background: '#111',
-                              color: '#fff',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            {suggestion.Name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    <input
+                      placeholder={t('add.unit')}
+                      value={ingredient.unit}
+                      onFocus={() => setActiveSuggestionIndex(null)}
+                      onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
+                      style={{
+                        padding: '12px 14px',
+                        width: '100%',
+                        borderRadius: '8px',
+                        border: '1px solid #2f2f2f',
+                        background: '#111',
+                        color: 'white',
+                        fontSize: '15px'
+                      }}
+                    />
 
-                  <button
-                    type="button"
-                    onClick={() => removeIngredientRow(index)}
-                    style={{
-                      height: '46px',
-                      borderRadius: '8px',
-                      border: '1px solid #333',
-                      background: '#111',
-                      color: 'white',
-                      cursor: 'pointer',
-                      fontSize: '22px',
-                      lineHeight: 1
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        placeholder={t('add.ingredientName')}
+                        value={ingredient.name}
+                        onFocus={() => setActiveSuggestionIndex(index)}
+                        onChange={(e) => {
+                          setActiveSuggestionIndex(index)
+                          updateIngredient(index, 'name', e.target.value)
+                          updateIngredient(index, 'ingredient_id', '')
+                        }}
+                        onBlur={() => {
+                          setTimeout(() => {
+                            setActiveSuggestionIndex((current) => (current === index ? null : current))
+                          }, 150)
+                        }}
+                        style={{
+                          padding: '12px 14px',
+                          width: '100%',
+                          borderRadius: '8px',
+                          border: '1px solid #2f2f2f',
+                          background: '#111',
+                          color: 'white',
+                          fontSize: '15px'
+                        }}
+                      />
+
+                      {showSuggestions && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            background: '#111',
+                            border: '1px solid #333',
+                            borderRadius: '10px',
+                            marginTop: '6px',
+                            zIndex: 10,
+                            boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {suggestions.map((suggestion) => (
+                            <button
+                              key={suggestion.id}
+                              type="button"
+                              onClick={() => selectSuggestion(index, suggestion)}
+                              style={{
+                                display: 'block',
+                                width: '100%',
+                                textAlign: 'left',
+                                padding: '11px 12px',
+                                border: 'none',
+                                borderBottom: '1px solid #222',
+                                background: '#111',
+                                color: '#fff',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {suggestion.Name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => removeIngredientRow(index)}
+                      style={{
+                        height: '46px',
+                        borderRadius: '8px',
+                        border: '1px solid #333',
+                        background: '#111',
+                        color: 'white',
+                        cursor: 'pointer',
+                        fontSize: '22px',
+                        lineHeight: 1
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
               </div>
             )
           })}
@@ -773,10 +934,11 @@ export default function AddRecipePage() {
               color: 'white',
               cursor: 'pointer',
               marginBottom: '22px',
-              fontSize: '15px'
+              fontSize: '15px',
+              width: isMobile ? '100%' : 'auto'
             }}
           >
-            + {t('add.addIngredient')}
+            {t('add.addIngredient')}
           </button>
 
           <div>
@@ -790,7 +952,8 @@ export default function AddRecipePage() {
                 color: 'white',
                 cursor: 'pointer',
                 fontSize: '17px',
-                fontWeight: 700
+                fontWeight: 700,
+                width: isMobile ? '100%' : 'auto'
               }}
             >
               {t('add.saveRecipe')}
